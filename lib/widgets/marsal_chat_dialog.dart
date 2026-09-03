@@ -51,10 +51,12 @@ class _MarsalChatDialogState extends State<MarsalChatDialog> {
     _scrollToBottom();
     _inputFocusNode.requestFocus();
 
-    final response = await GroqService.askAI(
+    // --- UBAH askAI MENJADI askUnifiedAI DI SINI ---
+    final response = await GroqService.askUnifiedAI(
       promptUser: text,
       userData: widget.userData,
     );
+    // -----------------------------------------------
 
     if (mounted) {
       setState(() {
@@ -62,13 +64,11 @@ class _MarsalChatDialogState extends State<MarsalChatDialog> {
         _isLoading = false;
       });
       _scrollToBottom();
-      // Pastikan kursor tetap fokus setelah balasan AI muncul
       _inputFocusNode.requestFocus();
     }
   }
 
-  @override
-  @override
+
   @override
   Widget build(BuildContext context) {
     return Dialog(

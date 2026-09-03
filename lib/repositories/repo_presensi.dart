@@ -166,42 +166,30 @@ class PresensiRepository {
     required String alasan,
     String? lampiranUrl,
   }) async {
-    String today = _getTodayString();
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/pengajuan-izin'), // <--- Endpoint baru di Worker
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uid': uid,
+          'nama_pegawai': namaPegawai,
+          'nip': nip,
+          'jenis_izin': jenisIzin,
+          'alasan': alasan,
+          'lampiran_url': lampiranUrl,
+          'tanggal': _getTodayString(),
+        }),
+      );
 
-    // 1. Simpan ke koleksi pengajuan_izin
-    final docRef = await _db.collection('pengajuan_izin').add({
-      'uid': uid,
-      'nama_pegawai': namaPegawai,
-      'nip': nip,
-      'jenis_izin': jenisIzin,
-      'alasan': alasan,
-      'status': 'Pending',
-      'lampiran_url': lampiranUrl,
-      'tanggal_pengajuan': Timestamp.fromDate(DateTime.now()),
-      'created_at': FieldValue.serverTimestamp(),
-    });
-
-    // 2. Simpan paralel ke koleksi presensi agar LANGSUNG MUNCUL di riwayat pegawai
-    await _db.collection('presensi').add({
-      'uid': uid,
-      'nip': nip,
-      'nama_pegawai': namaPegawai,
-      'tanggal': today,
-      'jam_masuk': null,
-      'jam_pulang': null,
-      'status': '$jenisIzin (Pending)', // Contoh: 'Sakit (Pending)' atau 'Izin (Pending)'
-      'pengajuan_id': docRef.id,        // ID referensi pengajuan untuk di-update Admin
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+      if (response.statusCode != 200) throw Exception('Gagal mengajukan izin ke D1');
+    } catch (e) {
+      debugPrint('Error kirimPengajuanIzin D1: $e');
+      rethrow;
+    }
   }
 
   // Stream Riwayat Presensi
   // Dipindahkan ke versi D1
-  /*
-  Stream<List<PresensiModel>> getRiwayatPresensiStream(String uid) {
-    ...
-  }
-  */
 
   Future<void> jalankanMigrasiPresensiKeCloudflare() async {
     try {

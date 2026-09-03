@@ -62,4 +62,19 @@ class PegawaiRepository {
       return [];
     }
   }
+
+  /// Mencari pegawai di D1 (Hanya ambil yang dicari, bukan semua!)
+  Future<List<PegawaiModel>> searchPegawai(String query) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/pegawai/search?q=$query'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => PegawaiModel.fromFirestore(json, json['uid'])).toList();
+      }
+    } catch (e) {
+      debugPrint('Error searchPegawai: $e');
+    }
+    return [];
+  }
+
 }
