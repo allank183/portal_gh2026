@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "798907010409",
+    "project_id": "portal-kinerja-gh2026",
+    "storage_bucket": "portal-kinerja-gh2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798907010409:android:5c557d1d9008e5bc78c1f8",
+        "android_client_info": {
+          "package_name": "com.lapker.portal_lapker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8mqGrcjTyuj3BkaTmgZSWuNNi1yCewIA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
