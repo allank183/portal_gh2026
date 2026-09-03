@@ -13,9 +13,8 @@ import 'admin/admin_page.dart';
 import 'dashboard/profil_saya/profil_saya.dart';
 import 'link_eksternal.dart';
 import 'about_system_screen.dart';
-import 'package:portal_lapker/widgets/marsal_hover_button.dart';
-import 'package:portal_lapker/widgets/marsal_chat_dialog.dart';
 import 'dashboard/profil_sdm/screen_profil_sdm.dart';
+import 'ai/screen_marsal_chat.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -34,21 +33,6 @@ class _MainLayoutState extends State<MainLayout> {
     super.initState();
     _loadUserData();
   }
-
-  void _showMarsalChatDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => MarsalChatDialog(
-        userData: _currentUser?.toFirestore() ?? {
-          'nama': _currentUser?.nama ?? 'Pegawai',
-          'nip': _currentUser?.nip ?? '',
-          'role': _currentUser?.role ?? 'Staff',
-        },
-      ),
-    );
-  }
-
-
 
   Future<void> _loadUserData() async {
     try {
@@ -82,6 +66,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     final List<_NavItem> menuItems = [
       _NavItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
+      _NavItem(icon: Icons.auto_awesome, label: 'Marsal AI'),
       _NavItem(icon: Icons.badge_rounded, label: 'Profil SDM'),
       _NavItem(icon: Icons.person_rounded, label: 'Profil Saya'),
       _NavItem(icon: Icons.school_rounded, label: 'Pelatihan'),
@@ -100,6 +85,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     final List<Widget> screens = [
       const ScreenDashboardUtama(),
+      ScreenMarsalChat(userData: _currentUser?.toFirestore() ?? {}),
       const ScreenProfilSdm(),
       _currentUser != null
           ? ScreenProfilSaya(pegawai: _currentUser!)
@@ -261,15 +247,6 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
             ],
-          ),
-
-          // 2. Floating Action Button Marsal AI
-          Positioned(
-            bottom: 24,
-            right: 24,
-            child: MarsalHoverButton(
-              onTap: _showMarsalChatDialog,
-            ),
           ),
         ],
       ),

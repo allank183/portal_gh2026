@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../repositories/repo_pegawai.dart';
 
 class TabTambahManual extends StatefulWidget {
   const TabTambahManual({super.key});
@@ -61,6 +62,7 @@ class _TabTambahManualState extends State<TabTambahManual> {
 
       String uid = userCredential.user!.uid;
 
+      // 2. Siapkan data untuk D1 (Gunakan int 1/0 untuk bool agar awet di SQL)
       Map<String, dynamic> pegawaiData = {
         'uid': uid,
         'nip': _nipController.text.trim(),
@@ -75,21 +77,21 @@ class _TabTambahManualState extends State<TabTambahManual> {
         'keterangan': _keteranganController.text.trim(),
         'status_kepegawaian': 'PNS',
         'jadwal_kerja': 'Reguler',
-        'is_active': true,
-        'is_first_login': true,
+        'is_active': 1, // <--- Simpan sebagai Integer
+        'is_first_login': 1,
         'role': 'pegawai',
-        'permissions': ['upload_sertifikat', 'view_own_dashboard'],
         'total_jpl': 0,
         'total_sertifikat': 0,
         'total_skp': 0,
-        'created_at': FieldValue.serverTimestamp(),
       };
 
-      await firestore.collection('pegawai').doc(uid).set(pegawaiData);
+      // 3. KIRIM KE CLOUDFLARE D1 (Gunakan Repository)
+      await PegawaiRepository().updatePegawai(pegawaiData);
+      // Atau panggil http.post langsung ke $_baseUrl/pegawai/add jika Anda sudah buat endpointnya
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pegawai ${_namaController.text} Berhasil Ditambahkan!')),
+          SnackBar(content: Text('Pegawai ${_namaController.text} Berhasil Ditambahkan ke D1!')),
         );
         _clearManualForm();
       }
@@ -99,7 +101,8 @@ class _TabTambahManualState extends State<TabTambahManual> {
           SnackBar(content: Text('Gagal menambah pegawai: $e')),
         );
       }
-    } finally {
+    }
+    finally {
       if (mounted) setState(() => _isManualLoading = false);
     }
   }

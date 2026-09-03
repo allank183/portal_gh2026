@@ -63,6 +63,22 @@ class PegawaiRepository {
     }
   }
 
+  /// 4. UPDATE DATA PEGAWAI (KE D1)
+  Future<void> updatePegawai(Map<String, dynamic> data) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/pegawai/update'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+    if (response.statusCode != 200) throw Exception('Gagal update data di D1');
+  }
+
+  /// 5. HAPUS PEGAWAI (DARI D1)
+  Future<void> deletePegawai(String uid) async {
+    final response = await http.get(Uri.parse('$_baseUrl/pegawai/delete?uid=$uid'));
+    if (response.statusCode != 200) throw Exception('Gagal hapus data di D1');
+  }
+
   /// Mencari pegawai di D1 (Hanya ambil yang dicari, bukan semua!)
   Future<List<PegawaiModel>> searchPegawai(String query) async {
     try {
