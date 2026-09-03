@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import '../models/model_pegawai.dart';
 
 class PegawaiRepository {
-  // Tambahkan baris ini kembali agar fungsi migrasi bisa memanggil Firestore
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
