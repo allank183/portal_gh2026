@@ -12,210 +12,204 @@ class ScreenDashboardUtama extends StatefulWidget {
 class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
   final StatistikRepository _statistikRepository = StatistikRepository();
 
+  // Fungsi untuk refresh data manual
+  Future<void> _handleRefresh() async {
+    setState(() {}); // Memicu pembangunan ulang widget dan panggil API D1 lagi
+  }
+
   @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      // HAPUS bagian appBar di sini agar tidak dobel dengan PremiumHeader
-      body: StreamBuilder<DataStatistikPegawai>(
-        stream: _statistikRepository.getStatistikStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: FutureBuilder<DataStatistikPegawai>(
+          future: _statistikRepository.getStatistikData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final data = snapshot.data ??
-              DataStatistikPegawai(
-                totalPegawai: 0,
-                totalLaki: 0,
-                totalPerempuan: 0,
-                totalMedis: 0,
-                totalNakes: 0,
-                totalAdmin: 0,
-                totalPns: 0,
-                totalP3k: 0,
-                totalBlu: 0,
-                totalCukup40Jpl: 0,
-              );
+            final data = snapshot.data ?? DataStatistikPegawai.empty();
 
-          return Column(
-            children: [
-              // 1. TAMBAHKAN PREMIUM HEADER DI SINI
-              const PremiumHeader(
-                title: 'Dashboard Utama',
-                subtitle: 'Ringkasan Informasi',
-                borderRadius: BorderRadius.zero,
-              ),
+            return Column(
+              children: [
+                const PremiumHeader(
+                  title: 'Dashboard Utama',
+                  subtitle: 'Data Real-time Cloudflare D1',
+                  borderRadius: BorderRadius.zero,
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildPengumumanSection(),
+                        const SizedBox(height: 24),
 
-              // 2. KONTEN UTAMA (Di dalam Expanded agar bisa scroll)
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // BANNER PENGUMUMAN
-                      _buildPengumumanSection(),
-                      const SizedBox(height: 24),
-
-                      // METRIK UTAMA (Responsive: Lebar mengikuti layar di HP)
-                      Text(
-                        'Ringkasan Pegawai & Pelatihan',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                        // METRIK UTAMA
+                        Text(
+                          'Ringkasan Pegawai & Pelatihan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          double statCardWidth = constraints.maxWidth > 600
-                              ? 260.0
-                              : constraints.maxWidth;
+                        const SizedBox(height: 12),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double statCardWidth = constraints.maxWidth > 600
+                                ? 260.0
+                                : constraints.maxWidth;
 
-                          return Wrap(
-                            spacing: 16,
-                            runSpacing: 16,
-                            children: [
-                              SizedBox(
-                                width: statCardWidth,
-                                child: _buildStatCard(
-                                  title: 'Total Pegawai',
-                                  value: '${data.totalPegawai}',
-                                  subtitle: 'SDM Terdaftar',
-                                  icon: Icons.people_alt_rounded,
-                                  gradientColors: [Colors.blue.shade700, Colors.blue.shade500],
+                            return Wrap(
+                              spacing: 16,
+                              runSpacing: 16,
+                              children: [
+                                SizedBox(
+                                  width: statCardWidth,
+                                  child: _buildStatCard(
+                                    title: 'Total Pegawai',
+                                    value: '${data.totalPegawai}',
+                                    subtitle: 'SDM Terdaftar',
+                                    icon: Icons.people_alt_rounded,
+                                    gradientColors: [Colors.blue.shade700, Colors.blue.shade500],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(
-                                width: statCardWidth,
-                                child: _buildStatCard(
-                                  title: 'Cukup 40 JPL',
-                                  value: '${data.totalCukup40Jpl}',
-                                  subtitle: 'Memenuhi Target JPL',
-                                  icon: Icons.verified_rounded,
-                                  gradientColors: [Colors.teal.shade700, Colors.teal.shade500],
+                                SizedBox(
+                                  width: statCardWidth,
+                                  child: _buildStatCard(
+                                    title: 'Cukup 40 JPL',
+                                    value: '${data.totalCukup40Jpl}',
+                                    subtitle: 'Memenuhi Target JPL',
+                                    icon: Icons.verified_rounded,
+                                    gradientColors: [Colors.teal.shade700, Colors.teal.shade500],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // BREAKDOWN DATA PEGAWAI (Responsive: 3 Kolom Desktop, 2 Kolom Tablet, 1 Kolom Mobile)
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          double cardWidth;
-                          if (constraints.maxWidth > 900) {
-                            cardWidth = (constraints.maxWidth - 32) / 3;
-                          } else if (constraints.maxWidth > 600) {
-                            cardWidth = (constraints.maxWidth - 16) / 2;
-                          } else {
-                            cardWidth = constraints.maxWidth;
-                          }
-
-                          return Wrap(
-                            spacing: 16,
-                            runSpacing: 16,
-                            children: [
-                              SizedBox(
-                                width: cardWidth,
-                                child: _buildBreakdownCard(
-                                  title: 'Jenis Kelamin',
-                                  icon: Icons.wc_rounded,
-                                  color: Colors.indigo,
-                                  items: [
-                                    _buildProgressItem('Laki-laki', data.totalLaki, data.totalPegawai, Colors.blue),
-                                    _buildProgressItem('Perempuan', data.totalPerempuan, data.totalPegawai, Colors.pink),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                width: cardWidth,
-                                child: _buildBreakdownCard(
-                                  title: 'Kelompok SDM',
-                                  icon: Icons.local_hospital_rounded,
-                                  color: Colors.teal,
-                                  items: [
-                                    _buildProgressItem('Medis', data.totalMedis, data.totalPegawai, Colors.teal),
-                                    _buildProgressItem('Nakes', data.totalNakes, data.totalPegawai, Colors.cyan),
-                                    _buildProgressItem('Admin', data.totalAdmin, data.totalPegawai, Colors.amber.shade800),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                width: cardWidth,
-                                child: _buildBreakdownCard(
-                                  title: 'Status Kepegawaian',
-                                  icon: Icons.badge_rounded,
-                                  color: Colors.orange.shade800,
-                                  items: [
-                                    _buildProgressItem('PNS', data.totalPns, data.totalPegawai, Colors.orange),
-                                    _buildProgressItem('P3K', data.totalP3k, data.totalPegawai, Colors.deepOrange),
-                                    _buildProgressItem('BLU', data.totalBlu, data.totalPegawai, Colors.brown),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // MODUL INTEGRASI (Responsive: Wrap aman tanpa risiko overflow)
-                      Text(
-                        'Modul Integrasi',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                              ],
+                            );
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          double moduleWidth = constraints.maxWidth > 600
-                              ? (constraints.maxWidth - 16) / 2
-                              : constraints.maxWidth;
+                        const SizedBox(height: 24),
 
-                          return Wrap(
-                            spacing: 16,
-                            runSpacing: 12,
-                            children: [
-                              SizedBox(
-                                width: moduleWidth,
-                                child: _buildPlaceholderModuleCard(
-                                  title: 'Kegiatan Mahasiswa',
-                                  description: 'Integrasi data magang & bimbingan',
-                                  icon: Icons.school_rounded,
-                                  color: Colors.purple,
+                        // BREAKDOWN DATA PEGAWAI
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double cardWidth;
+                            if (constraints.maxWidth > 900) {
+                              cardWidth = (constraints.maxWidth - 32) / 3;
+                            } else if (constraints.maxWidth > 600) {
+                              cardWidth = (constraints.maxWidth - 16) / 2;
+                            } else {
+                              cardWidth = constraints.maxWidth;
+                            }
+
+                            return Wrap(
+                              spacing: 16,
+                              runSpacing: 16,
+                              children: [
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildBreakdownCard(
+                                    title: 'Jenis Kelamin',
+                                    icon: Icons.wc_rounded,
+                                    color: Colors.indigo,
+                                    items: [
+                                      _buildProgressItem('Laki-laki', data.totalLaki, data.totalPegawai, Colors.blue),
+                                      _buildProgressItem('Perempuan', data.totalPerempuan, data.totalPegawai, Colors.pink),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(
-                                width: moduleWidth,
-                                child: _buildPlaceholderModuleCard(
-                                  title: 'Sistem Presensi',
-                                  description: 'Rekap kehadiran & kedisiplinan',
-                                  icon: Icons.fingerprint_rounded,
-                                  color: Colors.blueGrey,
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildBreakdownCard(
+                                    title: 'Kelompok SDM',
+                                    icon: Icons.local_hospital_rounded,
+                                    color: Colors.teal,
+                                    items: [
+                                      _buildProgressItem('Medis', data.totalMedis, data.totalPegawai, Colors.teal),
+                                      _buildProgressItem('Nakes', data.totalNakes, data.totalPegawai, Colors.cyan),
+                                      _buildProgressItem('Admin', data.totalAdmin, data.totalPegawai, Colors.amber.shade800),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildBreakdownCard(
+                                    title: 'Status Kepegawaian',
+                                    icon: Icons.badge_rounded,
+                                    color: Colors.orange.shade800,
+                                    items: [
+                                      _buildProgressItem('PNS', data.totalPns, data.totalPegawai, Colors.orange),
+                                      _buildProgressItem('P3K', data.totalP3k, data.totalPegawai, Colors.deepOrange),
+                                      _buildProgressItem('BLU', data.totalBlu, data.totalPegawai, Colors.brown),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // MODUL INTEGRASI
+                        Text(
+                          'Modul Integrasi',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double moduleWidth = constraints.maxWidth > 600
+                                ? (constraints.maxWidth - 16) / 2
+                                : constraints.maxWidth;
+
+                            return Wrap(
+                              spacing: 16,
+                              runSpacing: 12,
+                              children: [
+                                SizedBox(
+                                  width: moduleWidth,
+                                  child: _buildPlaceholderModuleCard(
+                                    title: 'Kegiatan Mahasiswa',
+                                    description: 'Integrasi data magang & bimbingan',
+                                    icon: Icons.school_rounded,
+                                    color: Colors.purple,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: moduleWidth,
+                                  child: _buildPlaceholderModuleCard(
+                                    title: 'Sistem Presensi',
+                                    description: 'Rekap kehadiran & kedisiplinan',
+                                    icon: Icons.fingerprint_rounded,
+                                    color: Colors.blueGrey,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
+
   // WIDGET PENGUMUMAN
   Widget _buildPengumumanSection() {
     return Container(

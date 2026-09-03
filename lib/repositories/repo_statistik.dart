@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart'; // Wajib ada untuk debugPrint
 
 class DataStatistikPegawai {
   final int totalPegawai;
@@ -41,38 +42,30 @@ class DataStatistikPegawai {
     );
   }
 
-  // Helper untuk data kosong jika terjadi error
   factory DataStatistikPegawai.empty() {
     return DataStatistikPegawai(
-      totalPegawai: 0, totalLaki: 0, totalPerempuan: 0, totalMedis: 0,
-      totalNakes: 0, totalAdmin: 0, totalPns: 0, totalP3k: 0, totalBlu: 0, totalCukup40Jpl: 0,
-    );
+        totalPegawai: 0, totalLaki: 0, totalPerempuan: 0, totalMedis: 0,
+        totalNakes: 0, totalAdmin: 0, totalPns: 0, totalP3k: 0, totalBlu: 0, totalCukup40Jpl: 0);
   }
 }
 
 class StatistikRepository {
-  // URL Worker Cloudflare D1 Anda
   final String _baseUrl = 'https://portalgh2026.mmakerapps.workers.dev';
 
-  /// MENGAMBIL DATA DARI CLOUDFLARE D1 (SQL)
-  /// Ini menggantikan pola lama yang boros kuota Firestore
   Future<DataStatistikPegawai> getStatistikData() async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/statistik'));
-
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        return DataStatistikPegawai.fromJson(data);
-      } else {
-        throw Exception('Gagal memuat data dari Worker (Status: ${response.statusCode})');
+        return DataStatistikPegawai.fromJson(jsonDecode(response.body));
       }
+      throw Exception('Gagal memuat statistik');
     } catch (e) {
-      print('Error StatistikRepository.getStatistikData: $e');
+      // Sekarang debugPrint sudah bisa digunakan tanpa error
+      debugPrint('Error StatistikRepository.getStatistikData: $e');
       return DataStatistikPegawai.empty();
     }
   }
 
-  /// Alias Stream agar tidak merusak kode UI yang sudah ada (menggunakan Future di dalam Stream)
   Stream<DataStatistikPegawai> getStatistikStream() async* {
     yield await getStatistikData();
   }

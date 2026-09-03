@@ -13,7 +13,7 @@ class PelatihanModel {
   final double jumlahSkp;
   final String fileUrl;
   final String status; // 'pending', 'approved', 'rejected'
-  final bool isPossibleDuplicate; // FLAG BARU
+  final bool isPossibleDuplicate;
   final String? verifiedBy;
   final DateTime? verifiedAt;
   final String? catatanAdmin;
@@ -32,13 +32,14 @@ class PelatihanModel {
     required this.jumlahSkp,
     required this.fileUrl,
     this.status = 'pending',
-    this.isPossibleDuplicate = false, // Default false
+    this.isPossibleDuplicate = false,
     this.verifiedBy,
     this.verifiedAt,
     this.catatanAdmin,
     this.createdAt,
   });
 
+  // 1. Convert ke Map (Untuk simpan ke Firestore/D1)
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -52,14 +53,44 @@ class PelatihanModel {
       'jumlah_skp': jumlahSkp,
       'file_url': fileUrl,
       'status': status,
-      'is_possible_duplicate': isPossibleDuplicate, // Ditambahkan ke Map
+      'is_possible_duplicate': isPossibleDuplicate,
       'verified_by': verifiedBy,
       'verified_at': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
-      'catatan_admin': catatanAdmin,
-      'createdAt': FieldValue.serverTimestamp(), // Tetap gunakan serverTimestamp Firestore
+      'createdAt': FieldValue.serverTimestamp(),
     };
   }
 
+  // 2. Factory untuk data dari CLOUDFLARE D1 (JSON)
+  factory PelatihanModel.fromJson(Map<String, dynamic> json) {
+    // Helper parsing tanggal aman
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return DateTime.tryParse(value);
+      return null;
+    }
+
+    return PelatihanModel(
+      id: json['id']?.toString(), // ID Integer di SQL diubah jadi String
+      uid: json['uid'] ?? '',
+      nip: json['nip'] ?? '',
+      namaPegawai: json['nama_pegawai'] ?? '',
+      nomorSertifikat: json['nomor_sertifikat'] ?? '',
+      judulPelatihan: json['judul_pelatihan'] ?? '',
+      penyelenggara: json['penyelenggara'] ?? '',
+      tanggalKegiatan: json['tanggal_kegiatan'] ?? '',
+      jumlahJpl: (json['jumlah_jpl'] ?? 0).toDouble(),
+      jumlahSkp: (json['jumlah_skp'] ?? 0).toDouble(),
+      fileUrl: json['file_url'] ?? '',
+      status: json['status'] ?? 'pending',
+      isPossibleDuplicate: (json['is_possible_duplicate'] == 1 || json['is_possible_duplicate'] == true),
+      verifiedBy: json['verified_by'],
+      verifiedAt: _parseDate(json['verified_at']),
+      catatanAdmin: json['catatan_admin'],
+      createdAt: _parseDate(json['created_at']),
+    );
+  }
+
+  // 3. Factory untuk data dari FIRESTORE (Lama)
   factory PelatihanModel.fromDocument(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return PelatihanModel(
@@ -75,7 +106,7 @@ class PelatihanModel {
       jumlahSkp: (data['jumlah_skp'] ?? 0).toDouble(),
       fileUrl: data['file_url'] ?? '',
       status: data['status'] ?? 'pending',
-      isPossibleDuplicate: data['is_possible_duplicate'] ?? false, // Parsing dari Firestore
+      isPossibleDuplicate: data['is_possible_duplicate'] ?? false,
       verifiedBy: data['verified_by'],
       verifiedAt: (data['verified_at'] as Timestamp?)?.toDate(),
       catatanAdmin: data['catatan_admin'],

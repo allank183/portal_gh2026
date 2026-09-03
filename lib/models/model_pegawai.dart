@@ -49,41 +49,58 @@ class PegawaiModel {
     this.updatedAt,
   });
 
-  // Factory untuk membuat Objek dari Dokumen Firestore
+  // Factory untuk membuat Objek dari Dokumen Firestore atau JSON D1
   factory PegawaiModel.fromFirestore(Map<String, dynamic> data, String docId) {
-    List<dynamic> rawPermissions = data['permissions'] ?? [];
+    bool _parseBool(dynamic value, {bool defaultValue = false}) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      return defaultValue;
+    }
+
+    DateTime? _parseDate(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is String) return DateTime.tryParse(value);
+      return null;
+    }
+
+    // --- PERBAIKAN LOGIKA PERMISSIONS DI SINI ---
+    List<String> permissionsList = [];
+    final rawData = data['permissions'];
+    if (rawData is List) {
+      permissionsList = rawData.map((e) => e.toString().toLowerCase().trim()).toList();
+    } else if (rawData is String && rawData.isNotEmpty) {
+      permissionsList = rawData.split(',').map((e) => e.trim().toLowerCase()).toList();
+    }
+    // --------------------------------------------
 
     return PegawaiModel(
-      uid: data['uid'] ?? docId,
-      nip: data['nip'] ?? '',
-      nama: data['nama'] ?? '',
-      email: data['email'] ?? '',
+      uid: data['uid']?.toString() ?? docId,
+      nip: data['nip']?.toString() ?? '',
+      nama: data['nama']?.toString() ?? '',
+      email: data['email']?.toString() ?? '',
       role: data['role']?.toString().toLowerCase() ?? 'pegawai',
-      permissions: rawPermissions
-          .map((e) => e.toString().toLowerCase().trim())
-          .toList(),
-      golongan: data['golongan'] ?? '',
-      instalasi: data['instalasi'] ?? '',
-      jenisKelamin: data['jenis_kelamin'] ?? '',
-      kelompok: data['kelompok'] ?? '',
-      keterangan: data['keterangan'] ?? '',
-      kontak: data['kontak'] ?? '',
-      ruangan: data['ruangan'] ?? '',
-      statusKepegawaian: data['status_kepegawaian'] ?? '',
-      jadwalKerja: data['jadwal_kerja'] ?? 'Reguler',
-      isActive: data['is_active'] ?? true,
-      isFirstLogin: data['is_first_login'] ?? false,
-      // Default ke 0 jika field statistik belum diisi di dokumen Firestore
+      permissions: permissionsList, // <--- Gunakan variabel baru ini
+      golongan: data['golongan']?.toString() ?? '',
+      instalasi: data['instalasi']?.toString() ?? '',
+      jenisKelamin: data['jenis_kelamin']?.toString() ?? '',
+      kelompok: data['kelompok']?.toString() ?? '',
+      keterangan: data['keterangan']?.toString() ?? '',
+      kontak: data['kontak']?.toString() ?? '',
+      ruangan: data['ruangan']?.toString() ?? '',
+      statusKepegawaian: data['status_kepegawaian']?.toString() ?? '',
+      jadwalKerja: data['jadwal_kerja']?.toString() ?? 'Reguler',
+      isActive: _parseBool(data['is_active'], defaultValue: true),
+      isFirstLogin: _parseBool(data['is_first_login'], defaultValue: false),
       totalJpl: (data['total_jpl'] as num?)?.toInt() ?? 0,
       totalSertifikat: (data['total_sertifikat'] as num?)?.toInt() ?? 0,
       totalSkp: (data['total_skp'] as num?)?.toInt() ?? 0,
-      // Disesuaikan dengan key 'created_at' di Firestore
-      createdAt: (data['created_at'] as Timestamp?)?.toDate(),
-      updatedAt: (data['updated_at'] as Timestamp?)?.toDate(),
+      createdAt: _parseDate(data['created_at']),
+      updatedAt: _parseDate(data['updated_at']),
     );
   }
-
-  // Map untuk keperluan simpan/update ke Firestore
+  // Map untuk keperluan simpan/update ke Firestore/D1
   Map<String, dynamic> toFirestore() {
     return {
       'uid': uid,
@@ -101,8 +118,8 @@ class PegawaiModel {
       'ruangan': ruangan,
       'status_kepegawaian': statusKepegawaian,
       'jadwal_kerja': jadwalKerja,
-      'is_active': isActive,
-      'is_first_login': isFirstLogin,
+      'is_active': isActive ? 1 : 0, // Simpan sebagai 1/0 agar cocok dengan D1
+      'is_first_login': isFirstLogin ? 1 : 0,
       'total_jpl': totalJpl,
       'total_sertifikat': totalSertifikat,
       'total_skp': totalSkp,

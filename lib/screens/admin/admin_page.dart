@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../repositories/repo_pelatihan.dart';
-import '../../repositories/repo_pegawai.dart';
 import 'tabs/tab_daftar_pegawai.dart';
 import 'tabs/tab_tambah_manual.dart';
 import 'tabs/tab_import_csv.dart';
-import '../../repositories/repo_presensi.dart';
 
 class ScreenImportPegawai extends StatelessWidget {
   const ScreenImportPegawai({super.key});
@@ -20,60 +17,9 @@ class ScreenImportPegawai extends StatelessWidget {
           elevation: 0,
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.sync_problem_rounded, color: Colors.orange),
-              tooltip: 'Jalankan Migrasi ke Cloudflare',
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text("Mulai Migrasi Data?"),
-                    content: const Text("Aplikasi akan memindahkan data Pegawai & Pelatihan ke Cloudflare D1."),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
-                      TextButton(
-                          onPressed: () async {
-                            Navigator.pop(ctx);
 
-                            // Loading Dialog
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => const Center(child: CircularProgressIndicator()),
-                            );
+          // --- TOMBOL MIGRASI SUDAH DIHAPUS DARI SINI ---
 
-                            try {
-                              // Panggil semua fungsi migrasi satu per satu
-                              await PegawaiRepository().jalankanMigrasiKeCloudflare();
-                              await PelatihanRepository().jalankanMigrasiPelatihanKeCloudflare();
-
-                              // TAMBAHKAN INI:
-                              await PresensiRepository().jalankanMigrasiPresensiKeCloudflare();
-
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Migrasi SELURUH Data Berhasil!"), backgroundColor: Colors.green)
-                                );
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red)
-                                );
-                              }
-                            }
-                          },
-                          child: const Text("Mulai Migrasi")
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
           bottom: const TabBar(
             labelColor: Colors.indigo,
             unselectedLabelColor: Colors.grey,
