@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../repositories/repo_pegawai.dart';
 
 class TabTambahManual extends StatefulWidget {
@@ -53,7 +52,6 @@ class _TabTambahManualState extends State<TabTambahManual> {
     setState(() => _isManualLoading = true);
 
     try {
-      final firestore = FirebaseFirestore.instance;
 
       UserCredential userCredential = await _createUserWithoutSwitchingSession(
         _emailController.text.trim(),

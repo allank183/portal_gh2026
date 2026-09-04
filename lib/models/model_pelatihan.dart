@@ -39,9 +39,10 @@ class PelatihanModel {
     this.createdAt,
   });
 
-  // 1. Convert ke Map (Untuk simpan ke Firestore/D1)
+  // 1. Convert ke Map (Untuk simpan/kirim ke Cloudflare Workers / D1)
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'uid': uid,
       'nip': nip,
       'nama_pegawai': namaPegawai,
@@ -53,24 +54,24 @@ class PelatihanModel {
       'jumlah_skp': jumlahSkp,
       'file_url': fileUrl,
       'status': status,
-      'is_possible_duplicate': isPossibleDuplicate,
+      'is_possible_duplicate': isPossibleDuplicate ? 1 : 0, // SQL menyimpan boolean sebagai 1/0
       'verified_by': verifiedBy,
-      'verified_at': verifiedAt != null ? Timestamp.fromDate(verifiedAt!) : null,
-      'createdAt': FieldValue.serverTimestamp(),
+      'verified_at': verifiedAt?.toIso8601String(),
+      'catatan_admin': catatanAdmin,
+      'created_at': (createdAt ?? DateTime.now()).toIso8601String(),
     };
   }
 
   // 2. Factory untuk data dari CLOUDFLARE D1 (JSON)
   factory PelatihanModel.fromJson(Map<String, dynamic> json) {
-    // Helper parsing tanggal aman
-    DateTime? _parseDate(dynamic value) {
+    DateTime? parseDate(dynamic value) {
       if (value == null) return null;
       if (value is String) return DateTime.tryParse(value);
       return null;
     }
 
     return PelatihanModel(
-      id: json['id']?.toString(), // ID Integer di SQL diubah jadi String
+      id: json['id']?.toString(), // Mengubah ID Integer SQL ke String
       uid: json['uid'] ?? '',
       nip: json['nip'] ?? '',
       namaPegawai: json['nama_pegawai'] ?? '',
@@ -84,13 +85,13 @@ class PelatihanModel {
       status: json['status'] ?? 'pending',
       isPossibleDuplicate: (json['is_possible_duplicate'] == 1 || json['is_possible_duplicate'] == true),
       verifiedBy: json['verified_by'],
-      verifiedAt: _parseDate(json['verified_at']),
+      verifiedAt: parseDate(json['verified_at']),
       catatanAdmin: json['catatan_admin'],
-      createdAt: _parseDate(json['created_at']),
+      createdAt: parseDate(json['created_at']),
     );
   }
 
-  // 3. Factory untuk data dari FIRESTORE (Lama)
+  // 3. Factory cadangan dari FIRESTORE (Lama)
   factory PelatihanModel.fromDocument(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return PelatihanModel(

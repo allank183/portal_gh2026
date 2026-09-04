@@ -6,7 +6,7 @@ import '../models/model_pelatihan.dart';
 class PelatihanRepository {
   final String _baseUrl = 'https://portalgh2026.mmakerapps.workers.dev';
 
-  /// 1. AMBIL RIWAYAT BERDASARKAN UID ATAU NIP (Digunakan AI & Verifikasi)
+  /// 1. AMBIL RIWAYAT BERDASARKAN UID ATAU NIP
   Stream<List<PelatihanModel>> getRiwayatByUidOrNip({String? uid, String? nip}) async* {
     while (true) {
       try {
@@ -16,7 +16,10 @@ class PelatihanRepository {
           final List<dynamic> data = jsonDecode(response.body);
           yield data.map((json) => PelatihanModel.fromJson(json)).toList();
         }
-      } catch (_) { yield []; }
+      } catch (e) {
+        debugPrint('Error getRiwayatByUidOrNip: $e');
+        yield [];
+      }
       await Future.delayed(const Duration(seconds: 60));
     }
   }
@@ -29,7 +32,9 @@ class PelatihanRepository {
         final data = jsonDecode(response.body);
         return data['exists'] ?? false;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error isSertifikatExists: $e');
+    }
     return false;
   }
 
@@ -45,17 +50,22 @@ class PelatihanRepository {
         final data = jsonDecode(response.body);
         return data['exists'] ?? false;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error isKombinasiExists: $e');
+    }
     return false;
   }
 
   /// 4. RECALCULATE STATS (HITUNG ULANG JPL PEGAWAI DI D1)
   Future<void> recalculatePegawaiStats({required String uid, required String nip}) async {
-    // Di SQL D1, kita cukup panggil endpoint yang menjalankan hitungan SUM secara otomatis
-    await http.get(Uri.parse('$_baseUrl/pegawai/recalculate?uid=$uid'));
+    try {
+      await http.get(Uri.parse('$_baseUrl/pegawai/recalculate?uid=$uid'));
+    } catch (e) {
+      debugPrint('Error recalculatePegawaiStats: $e');
+    }
   }
 
-  /// 1. SIMPAN SERTIFIKAT BARU (KE D1)
+  /// 5. SIMPAN SERTIFIKAT BARU (KE D1)
   Future<void> simpanSertifikat(PelatihanModel pelatihan) async {
     try {
       final response = await http.post(
@@ -63,15 +73,14 @@ class PelatihanRepository {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(pelatihan.toMap()),
       );
-      if (response.statusCode != 200) throw Exception('Gagal simpan ke D1');
+      if (response.statusCode != 200) throw Exception('Gagal simpan ke D1: ${response.body}');
     } catch (e) {
       debugPrint('Error simpanSertifikat: $e');
       rethrow;
     }
   }
 
-  /// 2. APPROVE SERTIFIKAT (KE D1)
-  /// Fungsi ini akan memicu Worker untuk update status pelatihan DAN tambah JPL pegawai secara atomik
+  /// 6. APPROVE SERTIFIKAT (KE D1)
   Future<void> approveSertifikat({
     required PelatihanModel pelatihan,
     required String adminId,
@@ -88,14 +97,14 @@ class PelatihanRepository {
           'admin_id': adminId,
         }),
       );
-      if (response.statusCode != 200) throw Exception('Gagal approve di D1');
+      if (response.statusCode != 200) throw Exception('Gagal approve di D1: ${response.body}');
     } catch (e) {
       debugPrint('Error approveSertifikat: $e');
       rethrow;
     }
   }
 
-  /// 3. REJECT SERTIFIKAT (KE D1)
+  /// 7. REJECT SERTIFIKAT (KE D1)
   Future<void> rejectSertifikat({
     required String docIdSertifikat,
     required String adminId,
@@ -111,15 +120,14 @@ class PelatihanRepository {
           'catatan': catatanAdmin,
         }),
       );
-      if (response.statusCode != 200) throw Exception('Gagal reject di D1');
+      if (response.statusCode != 200) throw Exception('Gagal reject di D1: ${response.body}');
     } catch (e) {
       debugPrint('Error rejectSertifikat: $e');
       rethrow;
     }
   }
 
-  /// 4. AMBIL RIWAYAT PELATIH PELATIHAN (DARI D1)
-  /// Menggantikan getRiwayatPelatihanPegawaiStream yang lama
+  /// 8. AMBIL RIWAYAT PELATIH PEGAWAI
   Stream<List<PelatihanModel>> getRiwayatPelatihanPegawaiStream(String nip) async* {
     while (true) {
       try {
@@ -132,12 +140,11 @@ class PelatihanRepository {
         debugPrint('Error fetch riwayat: $e');
         yield [];
       }
-      // Polling setiap 60 detik agar hemat kuota
       await Future.delayed(const Duration(seconds: 60));
     }
   }
 
-  /// 5. AMBIL ANTREAN PENDING (UNTUK ADMIN)
+  /// 9. AMBIL ANTREAN PENDING (UNTUK ADMIN)
   Stream<List<PelatihanModel>> getPendingPelatihanStream() async* {
     while (true) {
       try {
@@ -146,7 +153,10 @@ class PelatihanRepository {
           final List<dynamic> data = jsonDecode(response.body);
           yield data.map((json) => PelatihanModel.fromJson(json)).toList();
         }
-      } catch (_) { yield []; }
+      } catch (e) {
+        debugPrint('Error fetch pending: $e');
+        yield [];
+      }
       await Future.delayed(const Duration(seconds: 60));
     }
   }

@@ -66,18 +66,25 @@ class _TabDaftarPegawaiState extends State<TabDaftarPegawai> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: editJenisKelamin,
+                          initialValue: editJenisKelamin,
                           decoration: inputStyle('Gender', Icons.wc),
-                          items: const [DropdownMenuItem(value: 'L', child: Text('Laki-laki')), DropdownMenuItem(value: 'P', child: Text('Perempuan'))],
+                          items: const [
+                            DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
+                            DropdownMenuItem(value: 'P', child: Text('Perempuan')),
+                          ],
                           onChanged: (val) => setDialogState(() => editJenisKelamin = val!),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: editKelompok,
+                          initialValue: editKelompok,
                           decoration: inputStyle('Kelompok', Icons.groups_outlined),
-                          items: const [DropdownMenuItem(value: 'Medis', child: Text('Medis')), DropdownMenuItem(value: 'Nakes', child: Text('Nakes')), DropdownMenuItem(value: 'Admin', child: Text('Admin'))],
+                          items: const [
+                            DropdownMenuItem(value: 'Medis', child: Text('Medis')),
+                            DropdownMenuItem(value: 'Nakes', child: Text('Nakes')),
+                            DropdownMenuItem(value: 'Admin', child: Text('Admin')),
+                          ],
                           onChanged: (val) => setDialogState(() => editKelompok = val!),
                         ),
                       ),

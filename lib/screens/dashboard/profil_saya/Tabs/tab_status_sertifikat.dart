@@ -188,9 +188,11 @@ class TabStatusSertifikat extends StatelessWidget {
                       ),
                     ),
                     // Menampilkan alasan/catatan admin jika status Rejected
-                    if (item.status.toLowerCase() == 'rejected' && item.catatanAdmin!.isNotEmpty) ...[
+                    if (item.status.toLowerCase() == 'rejected' &&
+                        (item.catatanAdmin?.trim().isNotEmpty ?? false)) ...[
                       const SizedBox(height: 8),
                       Container(
+                        width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEF2F2),
@@ -210,6 +212,7 @@ class TabStatusSertifikat extends StatelessWidget {
                   ],
                 ),
               ),
+
               const SizedBox(width: 12),
               _buildStatusBadge(item.status),
             ],

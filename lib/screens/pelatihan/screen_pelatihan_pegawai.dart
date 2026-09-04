@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import '../../repositories/repo_pelatihan.dart';
 import '../../widgets/premium_header.dart';
 import 'upload_pelatihan.dart';
@@ -14,8 +15,8 @@ class ScreenPelatihanPegawai extends StatefulWidget {
 
 class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
   final TextEditingController _searchController = TextEditingController();
-  List<DocumentSnapshot> _allPegawai = [];
-  List<DocumentSnapshot> _filteredPegawai = [];
+  List<Map<String, dynamic>> _allPegawai = [];
+  List<Map<String, dynamic>> _filteredPegawai = [];
   bool _isLoading = true;
 
   // Variable Filter State
@@ -30,22 +31,30 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
 
   Future<void> _fetchPegawaiData() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('pegawai').get();
-      final docs = snapshot.docs;
+      final response = await http.get(
+        Uri.parse('https://portalgh2026.mmakerapps.workers.dev/pegawai/all'),
+      );
 
-      docs.sort((a, b) {
-        final num jplA = a.data()['total_jpl'] ?? 0;
-        final num jplB = b.data()['total_jpl'] ?? 0;
-        return jplB.compareTo(jplA);
-      });
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final List<Map<String, dynamic>> listPegawai = List<Map<String, dynamic>>.from(data);
 
-      if (mounted) {
-        setState(() {
-          _allPegawai = docs;
-          _filteredPegawai = docs;
-          _isLoading = false;
+        listPegawai.sort((a, b) {
+          final num jplA = a['total_jpl'] ?? 0;
+          final num jplB = b['total_jpl'] ?? 0;
+          return jplB.compareTo(jplA);
         });
-        _applyFilter();
+
+        if (mounted) {
+          setState(() {
+            _allPegawai = listPegawai;
+            _filteredPegawai = listPegawai;
+            _isLoading = false;
+          });
+          _applyFilter();
+        }
+      } else {
+        throw Exception('Gagal mengambil data dari D1');
       }
     } catch (e) {
       if (mounted) {
@@ -58,8 +67,7 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
     final q = _searchController.text.toLowerCase().trim();
 
     setState(() {
-      _filteredPegawai = _allPegawai.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+      _filteredPegawai = _allPegawai.where((data) {
         final nama = (data['nama'] ?? '').toString().toLowerCase();
         final nip = (data['nip'] ?? '').toString().toLowerCase();
         final kelompok = (data['kelompok'] ?? 'Umum').toString();
@@ -79,8 +87,8 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
       }).toList();
 
       _filteredPegawai.sort((a, b) {
-        final double jplA = ((a.data() as Map<String, dynamic>)['total_jpl'] ?? 0.0).toDouble();
-        final double jplB = ((b.data() as Map<String, dynamic>)['total_jpl'] ?? 0.0).toDouble();
+        final double jplA = (a['total_jpl'] ?? 0.0).toDouble();
+        final double jplB = (b['total_jpl'] ?? 0.0).toDouble();
         return jplB.compareTo(jplA);
       });
     });
@@ -103,7 +111,6 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Section Judul & Kontrol Filter
                   LayoutBuilder(
                     builder: (context, constraints) {
                       bool isMobile = constraints.maxWidth < 850;
@@ -140,8 +147,6 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
                     },
                   ),
                   const SizedBox(height: 16),
-
-                  // Table Container
                   _isLoading
                       ? const Padding(
                     padding: EdgeInsets.all(40.0),
@@ -191,8 +196,7 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
                                   DataColumn(label: Text('SERTIFIKAT')),
                                   DataColumn(label: Text('AKSI')),
                                 ],
-                                rows: _filteredPegawai.map((doc) {
-                                  final data = doc.data() as Map<String, dynamic>;
+                                rows: _filteredPegawai.map((data) {
                                   final double totalJpl = (data['total_jpl'] ?? 0).toDouble();
                                   final double totalSkp = (data['total_skp'] ?? 0).toDouble();
                                   final int totalSertifikat = data['total_sertifikat'] ?? 0;
@@ -304,7 +308,7 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
                                               tooltip: 'Sync / Hitung Ulang',
                                               onPressed: () async {
                                                 final nipVal = data['nip'] ?? '';
-                                                final uid = doc.id;
+                                                final uid = data['uid'] ?? '';
 
                                                 if (nipVal.isNotEmpty) {
                                                   await PelatihanRepository().recalculatePegawaiStats(

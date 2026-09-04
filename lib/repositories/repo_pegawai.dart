@@ -5,8 +5,9 @@ import 'package:http/http.dart' as http;
 import '../models/model_pegawai.dart';
 
 class PegawaiRepository {
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // PERBAIKAN: Gunakan domain worker yang benar
   final String _baseUrl = 'https://portalgh2026.mmakerapps.workers.dev';
 
   /// 1. Ambil Data Pegawai Login (DARI CLOUDFLARE D1)
@@ -36,50 +37,63 @@ class PegawaiRepository {
   /// 3. Ambil Semua Data Pegawai (DARI D1)
   Future<List<PegawaiModel>> getAllPegawai() async {
     try {
-      debugPrint('Memanggil D1: $_baseUrl/pegawai/all');
       final response = await http.get(Uri.parse('$_baseUrl/pegawai/all'));
-
       if (response.statusCode == 200) {
         final dynamic decodedData = jsonDecode(response.body);
-
-        // Pastikan data yang diterima adalah List
         if (decodedData is List) {
-          debugPrint('Data D1 diterima: ${decodedData.length} pegawai');
           return decodedData.map((json) {
-            // Kita gunakan docId dari field 'uid' yang ada di JSON SQL
             return PegawaiModel.fromFirestore(json as Map<String, dynamic>, json['uid'] ?? '');
           }).toList();
-        } else {
-          debugPrint('Data D1 bukan List: $decodedData');
-          return [];
         }
-      } else {
-        debugPrint('D1 Error Status: ${response.statusCode} - ${response.body}');
-        return [];
       }
     } catch (e) {
       debugPrint('Error getAllPegawai D1: $e');
-      return [];
     }
+    return [];
   }
 
-  /// 4. UPDATE DATA PEGAWAI (KE D1)
-  Future<void> updatePegawai(Map<String, dynamic> data) async {
+  /// 4. TAMBAH PEGAWAI BARU (KE D1) [BARU]
+  Future<void> addPegawai(PegawaiModel pegawai) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/pegawai/add'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(pegawai.toMap()),
+    );
+    if (response.statusCode != 200) throw Exception('Gagal tambah data di D1');
+  }
+
+  /// 5. UPDATE DATA PEGAWAI (KE D1)
+  Future<void> updatePegawai(dynamic data) async {
+    Map<String, dynamic> payload;
+
+    if (data is PegawaiModel) {
+      payload = data.toMap();
+    } else if (data is Map<String, dynamic>) {
+      payload = data;
+    } else if (data is Map) {
+      payload = Map<String, dynamic>.from(data);
+    } else {
+      throw Exception('Tipe data tidak valid untuk updatePegawai');
+    }
+
     final response = await http.post(
       Uri.parse('$_baseUrl/pegawai/update'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(data),
+      body: jsonEncode(payload),
     );
-    if (response.statusCode != 200) throw Exception('Gagal update data di D1');
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal update data di D1: ${response.body}');
+    }
   }
 
-  /// 5. HAPUS PEGAWAI (DARI D1)
+  /// 6. HAPUS PEGAWAI (DARI D1)
   Future<void> deletePegawai(String uid) async {
     final response = await http.get(Uri.parse('$_baseUrl/pegawai/delete?uid=$uid'));
     if (response.statusCode != 200) throw Exception('Gagal hapus data di D1');
   }
 
-  /// Mencari pegawai di D1 (Hanya ambil yang dicari, bukan semua!)
+  /// 7. CARI PEGAWAI DI D1
   Future<List<PegawaiModel>> searchPegawai(String query) async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/pegawai/search?q=$query'));
@@ -93,4 +107,17 @@ class PegawaiRepository {
     return [];
   }
 
+  /// 8. CEK NIP SUDAH ADA (KE D1) [BARU]
+  Future<bool> isNipExists(String nip) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/pegawai/check-nip?nip=$nip'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['exists'] ?? false;
+      }
+    } catch (e) {
+      debugPrint('Error check-nip: $e');
+    }
+    return false;
+  }
 }

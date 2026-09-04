@@ -49,7 +49,6 @@ class GroqService {
 
       final statData = results[0] as DataStatistikPegawai;
       final currentPegawai = results[1] as PegawaiModel?;
-      final listAbsensi = results[2] as List<PresensiModel>;
       final listPelatihan = results[3] as List<PelatihanModel>;
       final searchResult = results[4] as List<PegawaiModel>;
 

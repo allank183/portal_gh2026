@@ -15,7 +15,7 @@ class PegawaiModel {
   final String kontak;
   final String ruangan;
   final String statusKepegawaian;
-  final String jadwalKerja; // 'Reguler' atau 'Shift'
+  final String jadwalKerja;
   final bool isActive;
   final bool isFirstLogin;
   final int totalJpl;
@@ -49,23 +49,21 @@ class PegawaiModel {
     this.updatedAt,
   });
 
-  // Factory untuk membuat Objek dari Dokumen Firestore atau JSON D1
   factory PegawaiModel.fromFirestore(Map<String, dynamic> data, String docId) {
-    bool _parseBool(dynamic value, {bool defaultValue = false}) {
+    bool parseBool(dynamic value, {bool defaultValue = false}) {
       if (value == null) return defaultValue;
       if (value is bool) return value;
       if (value is int) return value == 1;
       return defaultValue;
     }
 
-    DateTime? _parseDate(dynamic value) {
+    DateTime? parseDate(dynamic value) {
       if (value == null) return null;
       if (value is Timestamp) return value.toDate();
       if (value is String) return DateTime.tryParse(value);
       return null;
     }
 
-    // --- PERBAIKAN LOGIKA PERMISSIONS DI SINI ---
     List<String> permissionsList = [];
     final rawData = data['permissions'];
     if (rawData is List) {
@@ -73,7 +71,6 @@ class PegawaiModel {
     } else if (rawData is String && rawData.isNotEmpty) {
       permissionsList = rawData.split(',').map((e) => e.trim().toLowerCase()).toList();
     }
-    // --------------------------------------------
 
     return PegawaiModel(
       uid: data['uid']?.toString() ?? docId,
@@ -81,7 +78,7 @@ class PegawaiModel {
       nama: data['nama']?.toString() ?? '',
       email: data['email']?.toString() ?? '',
       role: data['role']?.toString().toLowerCase() ?? 'pegawai',
-      permissions: permissionsList, // <--- Gunakan variabel baru ini
+      permissions: permissionsList,
       golongan: data['golongan']?.toString() ?? '',
       instalasi: data['instalasi']?.toString() ?? '',
       jenisKelamin: data['jenis_kelamin']?.toString() ?? '',
@@ -91,24 +88,24 @@ class PegawaiModel {
       ruangan: data['ruangan']?.toString() ?? '',
       statusKepegawaian: data['status_kepegawaian']?.toString() ?? '',
       jadwalKerja: data['jadwal_kerja']?.toString() ?? 'Reguler',
-      isActive: _parseBool(data['is_active'], defaultValue: true),
-      isFirstLogin: _parseBool(data['is_first_login'], defaultValue: false),
+      isActive: parseBool(data['is_active'], defaultValue: true),
+      isFirstLogin: parseBool(data['is_first_login'], defaultValue: false),
       totalJpl: (data['total_jpl'] as num?)?.toInt() ?? 0,
       totalSertifikat: (data['total_sertifikat'] as num?)?.toInt() ?? 0,
       totalSkp: (data['total_skp'] as num?)?.toInt() ?? 0,
-      createdAt: _parseDate(data['created_at']),
-      updatedAt: _parseDate(data['updated_at']),
+      createdAt: parseDate(data['created_at']),
+      updatedAt: parseDate(data['updated_at']),
     );
   }
-  // Map untuk keperluan simpan/update ke Firestore/D1
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
       'uid': uid,
       'nip': nip,
       'nama': nama,
       'email': email,
       'role': role,
-      'permissions': permissions,
+      'permissions': permissions.join(','),
       'golongan': golongan,
       'instalasi': instalasi,
       'jenis_kelamin': jenisKelamin,
@@ -118,16 +115,19 @@ class PegawaiModel {
       'ruangan': ruangan,
       'status_kepegawaian': statusKepegawaian,
       'jadwal_kerja': jadwalKerja,
-      'is_active': isActive ? 1 : 0, // Simpan sebagai 1/0 agar cocok dengan D1
+      'is_active': isActive ? 1 : 0,
       'is_first_login': isFirstLogin ? 1 : 0,
       'total_jpl': totalJpl,
       'total_sertifikat': totalSertifikat,
       'total_skp': totalSkp,
-      'updated_at': FieldValue.serverTimestamp(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': (updatedAt ?? DateTime.now()).toIso8601String(),
     };
   }
 
-  // --- HELPER GETTERS FOR HAK AKSES ---
+  // Alias agar UI lama yang memanggil toFirestore() tetap bekerja
+  Map<String, dynamic> toFirestore() => toMap();
+
   bool get isSuperAdmin => role == 'super_admin';
   bool get isVerifikator => permissions.contains('verifikator');
 }
