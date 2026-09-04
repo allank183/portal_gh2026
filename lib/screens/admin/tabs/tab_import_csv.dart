@@ -111,7 +111,7 @@ class _TabImportCsvState extends State<TabImportCsv> {
 
         try {
           // CEK NIP DI D1
-          final checkRes = await http.get(Uri.parse('https://portalgh2026.mmakerapps.workers.dev/pegawai/check-nip?nip=$nip'));
+          final checkRes = await http.get(Uri.parse('https://portal-gh2026.mmakerapps.workers.dev/pegawai/check-nip?nip=$nip'));
           if (jsonDecode(checkRes.body)['exists'] == true) {
             setState(() => _logs.add('--> SKIP: $nama (NIP Eksis)'));
             successCount++;
