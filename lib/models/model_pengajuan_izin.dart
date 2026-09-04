@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class PengajuanIzinModel {
   final String id;
   final String uid;
@@ -8,7 +6,7 @@ class PengajuanIzinModel {
   final String jenisIzin;
   final String alasan;
   final String status;
-  final String? lampiranUrl; // <--- Menyimpan URL file dari Cloudflare R2
+  final String? lampiranUrl;
   final DateTime tanggalPengajuan;
 
   PengajuanIzinModel({
@@ -23,32 +21,19 @@ class PengajuanIzinModel {
     required this.tanggalPengajuan,
   });
 
-  factory PengajuanIzinModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory PengajuanIzinModel.fromJson(Map<String, dynamic> json) {
     return PengajuanIzinModel(
-      id: doc.id,
-      uid: data['uid'] ?? '',
-      namaPegawai: data['nama_pegawai'] ?? '',
-      nip: data['nip'] ?? '',
-      jenisIzin: data['jenis_izin'] ?? '',
-      alasan: data['alasan'] ?? '',
-      status: data['status'] ?? 'Pending',
-      lampiranUrl: data['lampiran_url'],
-      tanggalPengajuan: (data['tanggal_pengajuan'] as Timestamp).toDate(),
+      id: json['id']?.toString() ?? '',
+      uid: json['uid'] ?? '',
+      namaPegawai: json['nama_pegawai'] ?? '',
+      nip: json['nip'] ?? '',
+      jenisIzin: json['jenis_izin'] ?? '',
+      alasan: json['alasan'] ?? '',
+      status: json['status'] ?? 'Pending',
+      lampiranUrl: json['lampiran_url'],
+      tanggalPengajuan: json['tanggal_pengajuan'] != null
+          ? (DateTime.tryParse(json['tanggal_pengajuan'].toString()) ?? DateTime.now())
+          : DateTime.now(),
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'uid': uid,
-      'nama_pegawai': namaPegawai,
-      'nip': nip,
-      'jenis_izin': jenisIzin,
-      'alasan': alasan,
-      'status': status,
-      'lampiran_url': lampiranUrl,
-      'tanggal_pengajuan': Timestamp.fromDate(tanggalPengajuan),
-      'created_at': FieldValue.serverTimestamp(),
-    };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PresensiModel {
+  // --- 1. DEKLARASI VARIABEL DITARUH DI SINI ---
   final String id;
   final String uid;
   final String nip;
@@ -9,17 +10,20 @@ class PresensiModel {
   final DateTime? jamMasuk;
   final DateTime? jamPulang;
   final String status;
-  final String jadwalKerja; // 'Reguler' / 'Shift'
-  final String? tipeShift;  // 'Pagi', 'Siang', 'Malam'
+  final String jadwalKerja;
+  final String? tipeShift;
   final int menitTerlambat;
   final int menitWajibGanti;
   final DateTime? targetJamPulang;
   final String? catatMasuk;
   final String? catatPulang;
+  final String? fotoMasukUrl;  // <--- DITARUH DI SINI
+  final String? fotoPulangUrl; // <--- DITARUH DI SINI
   final String? pengajuanId;
   final DateTime? createdAt;
   final String? catatanPenolakan;
 
+  // --- 2. CONSTRUCTOR ---
   PresensiModel({
     required this.id,
     required this.uid,
@@ -36,11 +40,14 @@ class PresensiModel {
     this.targetJamPulang,
     this.catatMasuk,
     this.catatPulang,
+    this.fotoMasukUrl,  // <--- MASUKKAN JUGA KE CONSTRUCTOR
+    this.fotoPulangUrl, // <--- MASUKKAN JUGA KE CONSTRUCTOR
     this.pengajuanId,
     this.createdAt,
     this.catatanPenolakan,
   });
 
+  // --- 3. FACTORY FROM FIRESTORE ---
   factory PresensiModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return PresensiModel(
@@ -61,12 +68,15 @@ class PresensiModel {
           : null,
       catatMasuk: data['catat_masuk'],
       catatPulang: data['catat_pulang'],
+      fotoMasukUrl: data['foto_masuk_url'],   // <--- DIPROSES DI SINI
+      fotoPulangUrl: data['foto_pulang_url'], // <--- DIPROSES DI SINI
       pengajuanId: data['pengajuan_id'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? (data['created_at'] as Timestamp?)?.toDate(),
       catatanPenolakan: data['catatan_penolakan'],
     );
   }
 
+  // --- 4. FACTORY FROM JSON ---
   factory PresensiModel.fromJson(Map<String, dynamic> json) {
     return PresensiModel(
       id: json['id']?.toString() ?? '',
@@ -86,6 +96,8 @@ class PresensiModel {
           : null,
       catatMasuk: json['catat_masuk'],
       catatPulang: json['catat_pulang'],
+      fotoMasukUrl: json['foto_masuk_url'],   // <--- DIPROSES DI SINI
+      fotoPulangUrl: json['foto_pulang_url'], // <--- DIPROSES DI SINI
       pengajuanId: json['pengajuan_id']?.toString(),
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       catatanPenolakan: json['catatan_penolakan'],

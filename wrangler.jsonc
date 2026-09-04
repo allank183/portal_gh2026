@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portal-gh2026",
+  "main": "index.js",
+  "compatibility_date": "2026-09-03",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "portal_gh2026",
+      "database_name": "portal_gh2026",
+      "database_id": "ee6b7240-7596-4b2d-9ba4-b0f09c0e9c53"
+    }
+  ]
+}

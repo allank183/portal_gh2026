@@ -8,7 +8,7 @@ import 'pelatihan/screen_pelatihan_pegawai.dart';
 import 'pelatihan/screen_verifikasi_pelatihan.dart';
 import 'mahasiswa/screen_kegiatan_mahasiswa.dart';
 import 'presensi/screen_presensi.dart';
-import 'presensi/screen_verifikasi_presensi.dart'; // <--- Import Screen Verifikasi Presensi
+import 'presensi/screen_verifikasi_presensi.dart';
 import 'admin/admin_page.dart';
 import 'dashboard/profil_saya/profil_saya.dart';
 import 'link_eksternal.dart';

@@ -8,7 +8,7 @@ class PegawaiRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // PERBAIKAN: Gunakan domain worker yang benar
-  final String _baseUrl = 'https://portalgh2026.mmakerapps.workers.dev';
+  final String _baseUrl = 'https://portal-gh2026.mmakerapps.workers.dev';
 
   /// 1. Ambil Data Pegawai Login (DARI CLOUDFLARE D1)
   Future<PegawaiModel?> getCurrentPegawai() async {
@@ -17,8 +17,23 @@ class PegawaiRepository {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/pegawai?uid=${user.uid}'));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data != null ? PegawaiModel.fromFirestore(data, user.uid) : null;
+        final dynamic decoded = jsonDecode(response.body);
+
+        // Menangani jika worker mengembalikan format { success: true, data: {...} } atau lansung object
+        Map<String, dynamic>? data;
+        if (decoded is Map<String, dynamic>) {
+          if (decoded.containsKey('data') && decoded['data'] is Map<String, dynamic>) {
+            data = decoded['data'];
+          } else {
+            data = decoded;
+          }
+        }
+
+        if (data != null && data.isNotEmpty) {
+          return PegawaiModel.fromFirestore(data, user.uid);
+        }
+      } else {
+        debugPrint('D1 Response Status: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error getCurrentPegawai D1: $e');
