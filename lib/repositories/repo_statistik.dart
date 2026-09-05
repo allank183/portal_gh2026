@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Wajib ada untuk debugPrint
 
@@ -50,7 +51,7 @@ class DataStatistikPegawai {
 }
 
 class StatistikRepository {
-  final String _baseUrl = 'https://portalgh2026.mmakerapps.workers.dev';
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   Future<DataStatistikPegawai> getStatistikData() async {
     try {

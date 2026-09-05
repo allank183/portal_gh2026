@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 import '../repositories/repo_pegawai.dart';
@@ -10,7 +11,7 @@ import '../models/model_pelatihan.dart';
 import '../models/model_presensi.dart';
 
 class GroqService {
-  static const String _workerUrl = 'https://portal-lapker-apigro.mmakerapps.workers.dev';
+  static String get _workerUrl => dotenv.env['GROQ_WORKER_URL'] ?? '';
 
   static Future<String> askUnifiedAI({
     required String promptUser,

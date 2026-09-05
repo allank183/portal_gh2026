@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../models/model_presensi.dart';
 
 class PresensiRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final String _baseUrl = 'https://portal-gh2026.mmakerapps.workers.dev';
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   String _getTodayString() {
     return DateFormat('yyyy-MM-dd').format(DateTime.now());

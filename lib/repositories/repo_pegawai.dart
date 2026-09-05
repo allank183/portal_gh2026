@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/model_pegawai.dart';
 
 class PegawaiRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // PERBAIKAN: Gunakan domain worker yang benar
-  final String _baseUrl = 'https://portal-gh2026.mmakerapps.workers.dev';
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   /// 1. Ambil Data Pegawai Login (DARI CLOUDFLARE D1)
   Future<PegawaiModel?> getCurrentPegawai() async {

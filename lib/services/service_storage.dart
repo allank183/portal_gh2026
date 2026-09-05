@@ -6,6 +6,11 @@ import 'package:http/http.dart' as http;
 class StorageService {
   late final String _workerUrl;
 
+  // Konstanta Nama Folder di Cloudflare R2
+  static const String folderSertifikat = 'sertifikat';
+  static const String folderPresensi = 'presensi_foto';
+  static const String folderIzin = 'dokumen_izin';
+
   StorageService() {
     _workerUrl = dotenv.env['R2_WORKER_URL'] ?? '';
   }
@@ -21,7 +26,7 @@ class StorageService {
       fileName: fileName,
       nip: nip,
       contentType: 'application/pdf',
-      folderPrefix: 'sertifikat',
+      folderPrefix: folderSertifikat,
     );
   }
 
@@ -36,7 +41,7 @@ class StorageService {
       fileName: fileName,
       nip: nip,
       contentType: 'image/jpeg',
-      folderPrefix: 'presensi_foto',
+      folderPrefix: folderPresensi,
     );
   }
 
@@ -52,7 +57,7 @@ class StorageService {
       fileName: fileName,
       nip: nip,
       contentType: contentType,
-      folderPrefix: 'dokumen_izin',
+      folderPrefix: folderIzin,
     );
   }
 

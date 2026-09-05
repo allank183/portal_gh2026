@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -14,7 +15,7 @@ class ScreenVerifikasiPresensi extends StatefulWidget {
 }
 
 class _ScreenVerifikasiPresensiState extends State<ScreenVerifikasiPresensi> {
-  final String _baseUrl = 'https://portal-gh2026.mmakerapps.workers.dev';
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   List<dynamic> _listPengajuan = [];
   bool _isLoading = true;

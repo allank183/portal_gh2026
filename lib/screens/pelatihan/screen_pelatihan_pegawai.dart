@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../../repositories/repo_pelatihan.dart';
 import '../../widgets/premium_header.dart';
@@ -31,8 +32,9 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
 
   Future<void> _fetchPegawaiData() async {
     try {
+      final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
       final response = await http.get(
-        Uri.parse('https://portalgh2026.mmakerapps.workers.dev/pegawai/all'),
+        Uri.parse('$baseUrl/pegawai/all'),
       );
 
       if (response.statusCode == 200) {

@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../repositories/repo_pegawai.dart';
 
 class TabImportCsv extends StatefulWidget {
@@ -111,7 +112,8 @@ class _TabImportCsvState extends State<TabImportCsv> {
 
         try {
           // CEK NIP DI D1
-          final checkRes = await http.get(Uri.parse('https://portal-gh2026.mmakerapps.workers.dev/pegawai/check-nip?nip=$nip'));
+          final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+          final checkRes = await http.get(Uri.parse('$baseUrl/pegawai/check-nip?nip=$nip'));
           if (jsonDecode(checkRes.body)['exists'] == true) {
             setState(() => _logs.add('--> SKIP: $nama (NIP Eksis)'));
             successCount++;

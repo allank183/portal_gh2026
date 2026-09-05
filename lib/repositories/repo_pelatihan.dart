@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/model_pelatihan.dart';
 
 class PelatihanRepository {
-  final String _baseUrl = 'https://portalgh2026.mmakerapps.workers.dev';
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   /// 1. AMBIL RIWAYAT BERDASARKAN UID ATAU NIP
   Stream<List<PelatihanModel>> getRiwayatByUidOrNip({String? uid, String? nip}) async* {
