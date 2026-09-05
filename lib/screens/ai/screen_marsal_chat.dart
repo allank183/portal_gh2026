@@ -42,6 +42,7 @@ class _ScreenMarsalChatState extends State<ScreenMarsalChat> {
     });
     _controller.clear();
     _scrollToBottom();
+    _inputFocusNode.requestFocus();
 
     final response = await GroqService.askUnifiedAI(
       promptUser: text,
@@ -166,6 +167,7 @@ class _ScreenMarsalChatState extends State<ScreenMarsalChat> {
             child: TextField(
               controller: _controller,
               focusNode: _inputFocusNode,
+              autofocus: true,
               onSubmitted: (_) => _sendMessage(),
               decoration: InputDecoration(
                 hintText: 'Ketik pertanyaan Anda di sini...',

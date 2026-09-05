@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class MarsalHoverButton extends StatefulWidget {
+class FabCadangan extends StatefulWidget {
   final VoidCallback onTap;
+  final String label;
+  final IconData icon;
 
-  const MarsalHoverButton({super.key, required this.onTap});
+  const FabCadangan({
+    super.key,
+    required this.onTap,
+    this.label = 'Menu',
+    this.icon = Icons.auto_awesome
+  });
 
   @override
-  State<MarsalHoverButton> createState() => _MarsalHoverButtonState();
+  State<FabCadangan> createState() => _FabCadanganState();
 }
 
-class _MarsalHoverButtonState extends State<MarsalHoverButton> {
+class _FabCadanganState extends State<FabCadangan> {
   bool _isHovered = false;
 
   @override
@@ -27,23 +34,18 @@ class _MarsalHoverButtonState extends State<MarsalHoverButton> {
           height: 50,
           constraints: BoxConstraints(
             minWidth: 50,
-            maxWidth: _isHovered ? 145 : 50,
+            maxWidth: _isHovered ? 160 : 50,
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(25),
             gradient: const LinearGradient(
-              colors: [
-                Color(0xFF1E3A8A),
-                Color(0xFF2563EB),
-              ],
+              colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2563EB).withValues(
-                  alpha: _isHovered ? 0.45 : 0.25,
-                ),
+                color: const Color(0xFF2563EB).withValues(alpha: _isHovered ? 0.45 : 0.25),
                 blurRadius: _isHovered ? 16 : 8,
                 offset: const Offset(0, 4),
               ),
@@ -54,23 +56,19 @@ class _MarsalHoverButtonState extends State<MarsalHoverButton> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 50,
                   height: 50,
                   child: Center(
-                    child: Icon(
-                      Icons.auto_awesome,
-                      color: Color(0xFF93C5FD),
-                      size: 22,
-                    ),
+                    child: Icon(widget.icon, color: const Color(0xFF93C5FD), size: 22),
                   ),
                 ),
-                AnimatedClipRect(
+                _AnimatedClipRect(
                   open: _isHovered,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 16.0),
                     child: Text(
-                      'Marsal AI',
+                      widget.label,
                       maxLines: 1,
                       softWrap: false,
                       style: GoogleFonts.plusJakartaSans(
@@ -90,11 +88,11 @@ class _MarsalHoverButtonState extends State<MarsalHoverButton> {
   }
 }
 
-class AnimatedClipRect extends StatelessWidget {
+class _AnimatedClipRect extends StatelessWidget {
   final bool open;
   final Widget child;
 
-  const AnimatedClipRect({super.key, required this.open, required this.child});
+  const _AnimatedClipRect({required this.open, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +101,7 @@ class AnimatedClipRect extends StatelessWidget {
       curve: Curves.easeOutCubic,
       alignment: Alignment.centerLeft,
       widthFactor: open ? 1.0 : 0.0,
-      child: ClipRect(
-        child: child,
-      ),
+      child: ClipRect(child: child),
     );
   }
 }
