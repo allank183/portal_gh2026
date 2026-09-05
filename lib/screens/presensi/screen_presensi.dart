@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/model_pegawai.dart';
 import '../../models/model_presensi.dart';
 import '../../services/service_location.dart';
@@ -117,20 +118,32 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
           );
         }
 
+        // ... baris 112 ...
+        // ... baris 112 ...
         final presensi = snapshot.data;
-        bool sudahMasuk = presensi != null;
-        bool sudahPulang = presensi?.jamPulang != null;
 
-        String waktuMasukText = presensi?.jamMasuk != null
-            ? DateFormat('HH:mm:ss').format(presensi!.jamMasuk!)
+        String todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        bool isToday = presensi?.tanggal == todayStr;
+        bool isShiftMalamAktif = presensi != null &&
+            presensi.tipeShift == 'Malam' &&
+            presensi.jamPulang == null;
+
+        // Logika utama
+        bool sudahMasuk = presensi != null && (isToday || isShiftMalamAktif);
+        bool sudahPulang = sudahMasuk && presensi.jamPulang != null; // Hapus '?'
+
+        String waktuMasukText = (sudahMasuk && presensi.jamMasuk != null) // Hapus '?'
+            ? DateFormat('HH:mm:ss').format(presensi.jamMasuk!) // Hapus '!' jika analyze masih komplain, tapi biasanya presensi.jamMasuk sudah cukup
             : '-- : --';
-        String waktuPulangText = presensi?.jamPulang != null
-            ? DateFormat('HH:mm:ss').format(presensi!.jamPulang!)
+
+        String waktuPulangText = (sudahMasuk && presensi.jamPulang != null) // Hapus '?'
+            ? DateFormat('HH:mm:ss').format(presensi.jamPulang!)
             : '-- : --';
 
         bool canSubmitMasuk = !isShiftUser || _selectedShift != null;
 
-        bool isIzinAtauSakit = presensi != null && (
+        // Gunakan presensi langsung (tanpa '!') karena sudah diproteksi oleh sudahMasuk
+        bool isIzinAtauSakit = sudahMasuk && (
             presensi.status.contains('Pending') ||
                 presensi.status.contains('Izin') ||
                 presensi.status.contains('Sakit') ||
@@ -422,7 +435,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text('Lampiran Surat / Dokumen (Opsional):', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text('Lampiran Surat / Dokumen (Wajib):', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () async {
@@ -467,6 +480,16 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                     if (alasanController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Keterangan wajib diisi!')),
+                      );
+                      return;
+                    }
+
+                    if (selectedFileBytes == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Anda wajib melampirkan dokumen bukti (PDF/Gambar)!'),
+                          backgroundColor: Colors.orange,
+                        ),
                       );
                       return;
                     }
@@ -860,12 +883,26 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                 ),
               ),
             ],
+            // ... baris 735 ...
             if (presensi.pengajuanId != null) ...[
               const Divider(height: 20),
-              Text(
-                'ID Pengajuan: ${presensi.pengajuanId}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.grey.shade600),
-              ),
+              if (presensi.fotoMasukUrl != null && presensi.fotoMasukUrl!.isNotEmpty)
+                InkWell(
+                  onTap: () async {
+                    Uri url = Uri.parse(presensi.fotoMasukUrl!);
+                    if (await canLaunchUrl(url)) await launchUrl(url);
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4.0),
+                    child: Text(
+                      '📎 Lihat Lampiran Dokumen',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ],
         ),

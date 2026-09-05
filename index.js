@@ -190,13 +190,18 @@ export default {
       }
 
       // --- ENDPOINT PRESENSI AKTIF ---
-      if (url.pathname === "/presensi-aktif" && request.method === "GET") {
-        const uid = url.searchParams.get("uid");
-        const data = await env.portal_gh2026.prepare("SELECT * FROM presensi WHERE uid = ? AND jam_pulang IS NULL LIMIT 1").bind(uid).first();
-        return new Response(JSON.stringify(data), { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        });
-      }
+      // GANTI DENGAN INI (Sudah ditambah ORDER BY):
+if (url.pathname === "/presensi-aktif" && request.method === "GET") {
+  const uid = url.searchParams.get("uid");
+  // Perubahan: Menambahkan ORDER BY tanggal DESC agar mengambil data terbaru
+  const data = await env.portal_gh2026.prepare(
+    "SELECT * FROM presensi WHERE uid = ? AND jam_pulang IS NULL ORDER BY tanggal DESC LIMIT 1"
+  ).bind(uid).first();
+  
+  return new Response(JSON.stringify(data), { 
+    headers: { ...corsHeaders, "Content-Type": "application/json" } 
+  });
+}
 
       // --- ENDPOINT RIWAYAT PRESENSI ---
       if (url.pathname === "/riwayat-presensi" && request.method === "GET") {
@@ -268,21 +273,26 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
 
 
 
-      // 1. ENDPOINT PENGAJUAN IZIN (UNTUK PEGAWAI SIMPAN IZIN BARU)
+            // 1. ENDPOINT PENGAJUAN IZIN (UNTUK PEGAWAI SIMPAN IZIN BARU)
       if (url.pathname === "/pengajuan-izin" && request.method === "POST") {
         const d = await request.json();
         const idIzin = crypto.randomUUID();
+        
         await env.portal_gh2026.batch([
+          // AKSI 1: Masukkan ke tabel pengajuan_izin (Agar muncul di layar ADMIN)
           env.portal_gh2026.prepare(`
             INSERT INTO pengajuan_izin (id, uid, nama_pegawai, nip, jenis_izin, alasan, status, lampiran_url, tanggal_pengajuan)
             VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?, CURRENT_TIMESTAMP)
           `).bind(idIzin, d.uid, d.nama_pegawai, d.nip, d.jenis_izin, d.alasan, d.lampiran_url),
 
+          // AKSI 2: Masukkan ke tabel presensi (Agar muncul di RIWAYAT USER)
+          // Kita simpan lampiran_url ke kolom foto_masuk_url agar Flutter bisa menampilkannya
           env.portal_gh2026.prepare(`
-            INSERT INTO presensi (uid, nip, nama_pegawai, tanggal, status, pengajuan_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `).bind(d.uid, d.nip, d.nama_pegawai, d.tanggal, d.jenis_izin + ' (Pending)', idIzin)
+            INSERT INTO presensi (uid, nip, nama_pegawai, tanggal, status, pengajuan_id, foto_masuk_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(d.uid, d.nip, d.nama_pegawai, d.tanggal, d.jenis_izin + ' (Pending)', idIzin, d.lampiran_url)
         ]);
+
         return new Response(JSON.stringify({ success: true }), { 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         });
