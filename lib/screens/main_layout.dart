@@ -5,7 +5,7 @@ import '../models/model_pegawai.dart';
 import '../repositories/repo_pegawai.dart';
 import 'dashboard/screen_dashboard_utama.dart';
 import 'pelatihan/screen_pelatihan_pegawai.dart';
-import 'pelatihan/screen_verifikasi_pelatihan.dart';
+import 'pelatihan/verif_pelatihan/screen_verifikasi_pelatihan.dart';
 import 'mahasiswa/screen_kegiatan_mahasiswa.dart';
 import 'presensi/screen_presensi.dart';
 import 'presensi/screen_verifikasi_presensi.dart';

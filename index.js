@@ -221,6 +221,20 @@ if (url.pathname === "/presensi-aktif" && request.method === "GET") {
         });
       }
 
+// --- ENDPOINT CEK KOMBINASI DUPLIKAT ---
+if (url.pathname === "/pelatihan/check-kombinasi" && request.method === "POST") {
+  const d = await request.json();
+  const data = await env.portal_gh2026.prepare(
+    "SELECT id FROM riwayat_pelatihan WHERE nip = ? AND judul_pelatihan = ? AND tanggal_kegiatan = ? LIMIT 1"
+  ).bind(d.nip, d.judul, d.tahun).first();
+  
+  return new Response(JSON.stringify({ exists: !!data }), { 
+    headers: { ...corsHeaders, "Content-Type": "application/json" } 
+  });
+}
+
+
+
       // --- ENDPOINT RECALCULATE JPL & SERTIFIKAT ---
       if (url.pathname === "/pegawai/recalculate" && request.method === "GET") {
         const uid = url.searchParams.get("uid");

@@ -8,11 +8,18 @@ class PelatihanRepository {
   final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   /// 1. AMBIL RIWAYAT BERDASARKAN UID ATAU NIP
-  Stream<List<PelatihanModel>> getRiwayatByUidOrNip({String? uid, String? nip}) async* {
+  // Kita tambahkan .asBroadcastStream() agar bisa didengarkan berkali-kali oleh widget Tab
+  Stream<List<PelatihanModel>> getRiwayatByUidOrNip({String? uid, String? nip}) {
+    return _internalGetRiwayatStream(uid, nip).asBroadcastStream();
+  }
+
+  // Fungsi internal untuk menghasilkan data
+  Stream<List<PelatihanModel>> _internalGetRiwayatStream(String? uid, String? nip) async* {
+    final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
     while (true) {
       try {
         final query = uid != null ? 'uid=$uid' : 'nip=$nip';
-        final response = await http.get(Uri.parse('$_baseUrl/pelatihan/riwayat?$query'));
+        final response = await http.get(Uri.parse('$baseUrl/pelatihan/riwayat?$query'));
         if (response.statusCode == 200) {
           final List<dynamic> data = jsonDecode(response.body);
           yield data.map((json) => PelatihanModel.fromJson(json)).toList();
@@ -21,8 +28,25 @@ class PelatihanRepository {
         debugPrint('Error getRiwayatByUidOrNip: $e');
         yield [];
       }
-      await Future.delayed(const Duration(seconds: 60));
+      // Jeda 30 detik untuk refresh riwayat pembanding
+      await Future.delayed(const Duration(seconds: 30));
     }
+  }
+
+  // Mencari riwayat tanpa polling (untuk satu kali ambil data)
+  Future<List<PelatihanModel>> getRiwayatFuture({String? uid, String? nip}) async {
+    final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    try {
+      final query = uid != null ? 'uid=$uid' : 'nip=$nip';
+      final response = await http.get(Uri.parse('$baseUrl/pelatihan/riwayat?$query'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => PelatihanModel.fromJson(json)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error getRiwayatFuture: $e');
+    }
+    return [];
   }
 
   /// 2. CEK DUPLIKASI NOMOR SERTIFIKAT

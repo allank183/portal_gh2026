@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import '../../models/model_pelatihan.dart';
-import '../../repositories/repo_pelatihan.dart';
+import '../../../models/model_pelatihan.dart';
+import '../../../repositories/repo_pelatihan.dart';
+import 'tabs/tab_preview_pdf.dart';
+import 'tabs/tab_riwayat_pembanding.dart';
 
 class ScreenVerifikasiPelatihan extends StatefulWidget {
   final String adminId;
@@ -250,16 +251,10 @@ class _ScreenVerifikasiPelatihanState
                       child: TabBarView(
                         children: [
                           // Tab 1: Viewer PDF
-                          pending.fileUrl.isNotEmpty
-                              ? SfPdfViewer.network(
-                            pending.fileUrl,
-                            key: ValueKey(pending.fileUrl),
-                          )
-                              : const Center(
-                              child: Text('URL File PDF tidak valid.')),
+                          TabPreviewPdf(fileUrl: pending.fileUrl),
 
                           // Tab 2: Pembanding Riwayat Approved Pegawai
-                          _buildApprovedHistoryComparison(pending.nip),
+                          TabRiwayatPembanding(nip: pending.nip),
                         ],
                       ),
                     ),
@@ -270,46 +265,6 @@ class _ScreenVerifikasiPelatihanState
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildApprovedHistoryComparison(String nip) {
-    return StreamBuilder<List<PelatihanModel>>(
-      stream: _pelatihanRepository.getRiwayatByUidOrNip(nip: nip),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final approvedList = (snapshot.data ?? [])
-            .where((element) => element.status == 'approved')
-            .toList();
-
-        if (approvedList.isEmpty) {
-          return const Center(
-            child: Text(
-                'Pegawai ini belum memiliki sertifikat yang di-approve sebelumnya.'),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: approvedList.length,
-          itemBuilder: (context, index) {
-            final item = approvedList[index];
-            return Card(
-              color: Colors.grey.shade50,
-              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              child: ListTile(
-                leading: const Icon(Icons.verified, color: Colors.green),
-                title: Text(item.judulPelatihan),
-                subtitle: Text(
-                    'No: ${item.nomorSertifikat} | JPL: ${item.jumlahJpl} | SKP: ${item.jumlahSkp}'),
-                trailing: Text(item.tanggalKegiatan),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
