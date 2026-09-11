@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:portal_lapker/repositories/repo_statistik.dart';
+import 'package:portal_gh2026/repositories/repo_statistik.dart';
 
 class TabStatistikSdm extends StatefulWidget {
   const TabStatistikSdm({super.key});

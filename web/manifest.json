@@ -1,6 +1,6 @@
 {
-    "name": "portal_lapker",
-    "short_name": "portal_lapker",
+    "name": "portal_gh2026",
+    "short_name": "portal_gh2026",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

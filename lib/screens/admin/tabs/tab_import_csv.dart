@@ -108,7 +108,7 @@ class _TabImportCsvState extends State<TabImportCsv> {
         String nip = row[1].toString().trim();
         String email = row.length > 2 && row[2].toString().contains('@')
             ? row[2].toString().trim()
-            : '$nip@lapker.internal';
+            : '$nip@gh2026.internal';
 
         try {
           // CEK NIP DI D1

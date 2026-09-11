@@ -7,6 +7,7 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../../models/model_pelatihan.dart';
 import '../../repositories/repo_pelatihan.dart';
 import '../../services/service_storage.dart';
+import '../../services/service_trigger.dart';
 
 class UploadSertifikatPage extends StatefulWidget {
   final Map<String, dynamic> pegawaiData;
@@ -283,8 +284,11 @@ class _UploadSertifikatPageState extends State<UploadSertifikatPage> {
         isPossibleDuplicate: isDuplicate, // Tanda merah akan otomatis muncul di panel admin jika true
       );
 
-      // 4. Simpan ke Firestore
+      // 4. Simpan ke D1
       await PelatihanRepository().simpanSertifikat(pelatihan);
+
+      // 5. Trigger Refresh Global
+      refreshTrigger.notifyPelatihanUpdate();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

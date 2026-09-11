@@ -31,10 +31,21 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
 
   String? _selectedShift;
 
+  // Cache Stream agar tidak membuat koneksi baru saat rebuild (Mencegah Request Storm)
+  late Stream<PresensiModel?> _presensiAktifStream;
+  late Stream<List<PresensiModel>> _riwayatPresensiStream;
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
+
+    // Inisialisasi stream hanya sekali di awal
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _presensiAktifStream = _presensiRepository.getPresensiAktifStream(user.uid);
+      _riwayatPresensiStream = _presensiRepository.getRiwayatPresensiStream(user.uid);
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -80,7 +91,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPresensiHariIniCard(user.uid),
+                      _buildPresensiHariIniCard(),
                       const SizedBox(height: 24),
                       Text(
                         'Riwayat Presensi Anda',
@@ -91,7 +102,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _buildRiwayatPresensiTable(user.uid),
+                      _buildRiwayatPresensiTable(),
                     ],
                   ),
                 ),
@@ -103,11 +114,11 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
     );
   }
 
-  Widget _buildPresensiHariIniCard(String uid) {
+  Widget _buildPresensiHariIniCard() {
     bool isShiftUser = _currentUser?.jadwalKerja == 'Shift';
 
     return StreamBuilder<PresensiModel?>(
-      stream: _presensiRepository.getPresensiAktifStream(uid),
+      stream: _presensiAktifStream, // Menggunakan cache variabel
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Card(
@@ -118,31 +129,27 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
           );
         }
 
-        // ... baris 112 ...
-        // ... baris 112 ...
         final presensi = snapshot.data;
-
         String todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         bool isToday = presensi?.tanggal == todayStr;
         bool isShiftMalamAktif = presensi != null &&
             presensi.tipeShift == 'Malam' &&
             presensi.jamPulang == null;
 
-        // Logika utama
+        // Logika status masuk hari ini
         bool sudahMasuk = presensi != null && (isToday || isShiftMalamAktif);
-        bool sudahPulang = sudahMasuk && presensi.jamPulang != null; // Hapus '?'
+        bool sudahPulang = sudahMasuk && presensi.jamPulang != null;
 
-        String waktuMasukText = (sudahMasuk && presensi.jamMasuk != null) // Hapus '?'
-            ? DateFormat('HH:mm:ss').format(presensi.jamMasuk!) // Hapus '!' jika analyze masih komplain, tapi biasanya presensi.jamMasuk sudah cukup
+        String waktuMasukText = (sudahMasuk && presensi.jamMasuk != null)
+            ? DateFormat('HH:mm:ss').format(presensi.jamMasuk!)
             : '-- : --';
 
-        String waktuPulangText = (sudahMasuk && presensi.jamPulang != null) // Hapus '?'
+        String waktuPulangText = (sudahMasuk && presensi.jamPulang != null)
             ? DateFormat('HH:mm:ss').format(presensi.jamPulang!)
             : '-- : --';
 
         bool canSubmitMasuk = !isShiftUser || _selectedShift != null;
 
-        // Gunakan presensi langsung (tanpa '!') karena sudah diproteksi oleh sudahMasuk
         bool isIzinAtauSakit = sudahMasuk && (
             presensi.status.contains('Pending') ||
                 presensi.status.contains('Izin') ||
@@ -306,7 +313,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                         child: ElevatedButton.icon(
                           onPressed: (_isSubmitting || !canSubmitMasuk)
                               ? null
-                              : () => _confirmAndSubmitMasuk(uid, isShiftUser),
+                              : () => _confirmAndSubmitMasuk(_currentUser!.uid, isShiftUser),
                           icon: _isSubmitting
                               ? const SizedBox(
                             width: 20,
@@ -332,7 +339,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
-                        onPressed: () => _showDialogPengajuanIzin(uid),
+                        onPressed: () => _showDialogPengajuanIzin(_currentUser!.uid),
                         icon: const Icon(Icons.note_add_outlined, color: Color(0xFFD97706)),
                         label: Text(
                           'AJUKAN IZIN / NON-HADIR',
@@ -354,7 +361,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                         child: ElevatedButton.icon(
                           onPressed: _isSubmitting
                               ? null
-                              : () => _confirmAndSubmitPulang(presensi.id),
+                              : () => _confirmAndSubmitPulang(presensi.id.toString()),
                           icon: _isSubmitting
                               ? const SizedBox(
                             width: 20,
@@ -494,7 +501,6 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                       return;
                     }
 
-                    // DEKLARASIKAN MESSENGER DI SINI SEBELUM ASYNC GAP / NAVIGATOR
                     final messenger = ScaffoldMessenger.of(context);
 
                     Navigator.pop(context);
@@ -710,9 +716,9 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
     );
   }
 
-  Widget _buildRiwayatPresensiTable(String uid) {
+  Widget _buildRiwayatPresensiTable() {
     return StreamBuilder<List<PresensiModel>>(
-      stream: _presensiRepository.getRiwayatPresensiStream(uid),
+      stream: _riwayatPresensiStream, // Menggunakan cache variabel
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Card(
@@ -883,7 +889,6 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                 ),
               ),
             ],
-            // ... baris 735 ...
             if (presensi.pengajuanId != null) ...[
               const Divider(height: 20),
               if (presensi.fotoMasukUrl != null && presensi.fotoMasukUrl!.isNotEmpty)

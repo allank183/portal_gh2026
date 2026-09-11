@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/model_pelatihan.dart';
 import '../../../repositories/repo_pelatihan.dart';
+import '../../../services/service_trigger.dart';
 import 'tabs/tab_preview_pdf.dart';
 import 'tabs/tab_riwayat_pembanding.dart';
 
@@ -14,10 +15,32 @@ class ScreenVerifikasiPelatihan extends StatefulWidget {
       _ScreenVerifikasiPelatihanState();
 }
 
-class _ScreenVerifikasiPelatihanState
-    extends State<ScreenVerifikasiPelatihan> {
+class _ScreenVerifikasiPelatihanState extends State<ScreenVerifikasiPelatihan> {
   final PelatihanRepository _pelatihanRepository = PelatihanRepository();
   String? _selectedPendingId;
+  late Future<List<PelatihanModel>> _pendingFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    // Dengarkan lonceng: Jika ada data pelatihan berubah, muat ulang Future
+    refreshTrigger.addListener(_loadData);
+  }
+
+  void _loadData() {
+    if (mounted) {
+      setState(() {
+        _pendingFuture = _pelatihanRepository.getPendingPelatihanFuture();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_loadData);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +49,8 @@ class _ScreenVerifikasiPelatihanState
         title: const Text('Verifikasi Sertifikat Pelatihan'),
         elevation: 1,
       ),
-      body: StreamBuilder<List<PelatihanModel>>(
-        stream: _pelatihanRepository.getPendingPelatihanStream(),
+      body: FutureBuilder<List<PelatihanModel>>(
+        future: _pendingFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -94,8 +117,6 @@ class _ScreenVerifikasiPelatihanState
                             Text(
                               'No: ${item.nomorSertifikat} | JPL: ${item.jumlahJpl} | SKP: ${item.jumlahSkp}',
                             ),
-
-                            // 1. INDIKATOR PERINGATAN DUPLIKAT PADA ANTREAN (PANEL KIRI)
                             if (item.isPossibleDuplicate) ...[
                               const SizedBox(height: 6),
                               Container(
@@ -158,7 +179,6 @@ class _ScreenVerifikasiPelatihanState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 2. BANNER PERINGATAN DUPLIKAT PADA DETAIL (PANEL KANAN)
             if (pending.isPossibleDuplicate) ...[
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -250,10 +270,7 @@ class _ScreenVerifikasiPelatihanState
                     Expanded(
                       child: TabBarView(
                         children: [
-                          // Tab 1: Viewer PDF
                           TabPreviewPdf(fileUrl: pending.fileUrl),
-
-                          // Tab 2: Pembanding Riwayat Approved Pegawai
                           TabRiwayatPembanding(nip: pending.nip),
                         ],
                       ),
@@ -274,6 +291,10 @@ class _ScreenVerifikasiPelatihanState
         pelatihan: pending,
         adminId: widget.adminId,
       );
+      
+      // Trigger Refresh Global
+      refreshTrigger.notifyPelatihanUpdate();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sertifikat berhasil di-approve!')),
@@ -313,10 +334,7 @@ class _ScreenVerifikasiPelatihanState
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               if (pending.id == null) return;
-
-              // 1. Simpan messenger sebelum konteks navigator/async berubah
               final messenger = ScaffoldMessenger.of(context);
-
               Navigator.pop(context);
 
               await _pelatihanRepository.rejectSertifikat(
@@ -327,7 +345,9 @@ class _ScreenVerifikasiPelatihanState
                     : reasonController.text,
               );
 
-              // 2. Cek mounted lalu gunakan variabel messenger yang sudah disimpan
+              // Trigger Refresh Global
+              refreshTrigger.notifyPelatihanUpdate();
+
               if (!mounted) return;
               messenger.showSnackBar(
                 const SnackBar(content: Text('Sertifikat berhasil ditolak.')),

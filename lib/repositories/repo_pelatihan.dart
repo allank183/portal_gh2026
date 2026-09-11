@@ -7,49 +7,36 @@ import '../models/model_pelatihan.dart';
 class PelatihanRepository {
   final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
-  /// 1. AMBIL RIWAYAT BERDASARKAN UID ATAU NIP
-  // Kita tambahkan .asBroadcastStream() agar bisa didengarkan berkali-kali oleh widget Tab
-  Stream<List<PelatihanModel>> getRiwayatByUidOrNip({String? uid, String? nip}) {
-    return _internalGetRiwayatStream(uid, nip).asBroadcastStream();
-  }
-
-  // Fungsi internal untuk menghasilkan data
-  Stream<List<PelatihanModel>> _internalGetRiwayatStream(String? uid, String? nip) async* {
-    final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    while (true) {
-      try {
-        final query = uid != null ? 'uid=$uid' : 'nip=$nip';
-        final response = await http.get(Uri.parse('$baseUrl/pelatihan/riwayat?$query'));
-        if (response.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(response.body);
-          yield data.map((json) => PelatihanModel.fromJson(json)).toList();
-        }
-      } catch (e) {
-        debugPrint('Error getRiwayatByUidOrNip: $e');
-        yield [];
-      }
-      // Jeda 30 detik untuk refresh riwayat pembanding
-      await Future.delayed(const Duration(seconds: 30));
-    }
-  }
-
-  // Mencari riwayat tanpa polling (untuk satu kali ambil data)
+  /// 1. AMBIL RIWAYAT (No Polling - Future Only)
   Future<List<PelatihanModel>> getRiwayatFuture({String? uid, String? nip}) async {
-    final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
     try {
       final query = uid != null ? 'uid=$uid' : 'nip=$nip';
-      final response = await http.get(Uri.parse('$baseUrl/pelatihan/riwayat?$query'));
+      final response = await http.get(Uri.parse('$_baseUrl/pelatihan/riwayat?$query'));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => PelatihanModel.fromJson(json)).toList();
       }
     } catch (e) {
-      debugPrint('Error getRiwayatFuture: $e');
+      debugPrint('Error PelatihanRepository.getRiwayatFuture: $e');
     }
     return [];
   }
 
-  /// 2. CEK DUPLIKASI NOMOR SERTIFIKAT
+  /// 2. AMBIL ANTREAN PENDING (No Polling - Future Only)
+  Future<List<PelatihanModel>> getPendingPelatihanFuture() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/pelatihan/pending'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => PelatihanModel.fromJson(json)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error PelatihanRepository.getPendingPelatihanFuture: $e');
+    }
+    return [];
+  }
+
+  /// 3. CEK DUPLIKASI NOMOR SERTIFIKAT
   Future<bool> isSertifikatExists(String nomorSertifikat) async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/pelatihan/check-nomor?nomor=$nomorSertifikat'));
@@ -63,7 +50,7 @@ class PelatihanRepository {
     return false;
   }
 
-  /// 3. CEK KOMBINASI DUPLIKAT (NIP + JUDUL + TAHUN)
+  /// 4. CEK KOMBINASI DUPLIKAT (NIP + JUDUL + TAHUN)
   Future<bool> isKombinasiExists({required String nip, required String judulPelatihan, required String tanggalAtauTahun}) async {
     try {
       final response = await http.post(
@@ -81,7 +68,7 @@ class PelatihanRepository {
     return false;
   }
 
-  /// 4. RECALCULATE STATS (HITUNG ULANG JPL PEGAWAI DI D1)
+  /// 5. RECALCULATE STATS (HITUNG ULANG JPL PEGAWAI DI D1)
   Future<void> recalculatePegawaiStats({required String uid, required String nip}) async {
     try {
       await http.get(Uri.parse('$_baseUrl/pegawai/recalculate?uid=$uid'));
@@ -90,7 +77,7 @@ class PelatihanRepository {
     }
   }
 
-  /// 5. SIMPAN SERTIFIKAT BARU (KE D1)
+  /// 6. SIMPAN SERTIFIKAT BARU (KE D1)
   Future<void> simpanSertifikat(PelatihanModel pelatihan) async {
     try {
       final response = await http.post(
@@ -105,7 +92,7 @@ class PelatihanRepository {
     }
   }
 
-  /// 6. APPROVE SERTIFIKAT (KE D1)
+  /// 7. APPROVE SERTIFIKAT (KE D1)
   Future<void> approveSertifikat({
     required PelatihanModel pelatihan,
     required String adminId,
@@ -129,7 +116,7 @@ class PelatihanRepository {
     }
   }
 
-  /// 7. REJECT SERTIFIKAT (KE D1)
+  /// 8. REJECT SERTIFIKAT (KE D1)
   Future<void> rejectSertifikat({
     required String docIdSertifikat,
     required String adminId,
@@ -152,37 +139,5 @@ class PelatihanRepository {
     }
   }
 
-  /// 8. AMBIL RIWAYAT PELATIH PEGAWAI
-  Stream<List<PelatihanModel>> getRiwayatPelatihanPegawaiStream(String nip) async* {
-    while (true) {
-      try {
-        final response = await http.get(Uri.parse('$_baseUrl/pelatihan/riwayat?nip=$nip'));
-        if (response.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(response.body);
-          yield data.map((json) => PelatihanModel.fromJson(json)).toList();
-        }
-      } catch (e) {
-        debugPrint('Error fetch riwayat: $e');
-        yield [];
-      }
-      await Future.delayed(const Duration(seconds: 60));
-    }
-  }
-
-  /// 9. AMBIL ANTREAN PENDING (UNTUK ADMIN)
-  Stream<List<PelatihanModel>> getPendingPelatihanStream() async* {
-    while (true) {
-      try {
-        final response = await http.get(Uri.parse('$_baseUrl/pelatihan/pending'));
-        if (response.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(response.body);
-          yield data.map((json) => PelatihanModel.fromJson(json)).toList();
-        }
-      } catch (e) {
-        debugPrint('Error fetch pending: $e');
-        yield [];
-      }
-      await Future.delayed(const Duration(seconds: 60));
-    }
-  }
+  // --- STREAM FUNCTIONS DIHAPUS UNTUK EFISIENSI KUOTA ---
 }

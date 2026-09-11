@@ -36,14 +36,31 @@ class _MainLayoutState extends State<MainLayout> {
 
   Future<void> _loadUserData() async {
     try {
+      // Beri jeda singkat agar Firebase Auth di Web stabil
+      await Future.delayed(const Duration(milliseconds: 600));
+      final user = FirebaseAuth.instance.currentUser;
+      print("INFO: UID YANG SEDANG LOGIN ADALAH -> ${user?.uid}");
+
       final pegawai = await PegawaiRepository().getCurrentPegawai();
-      setState(() {
-        _currentUser = pegawai;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _currentUser = pegawai;
+          _isLoading = false;
+        });
+
+        // --- TAMBAHKAN PERINGATAN INI ---
+        if (pegawai == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profil tidak ditemukan di database D1. Harap hubungi Admin.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
     } catch (e) {
       debugPrint('Gagal memuat data pegawai: $e');
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

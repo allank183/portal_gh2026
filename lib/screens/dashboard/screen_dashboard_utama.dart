@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../repositories/repo_statistik.dart';
-import 'package:portal_lapker/widgets/premium_header.dart';
+import 'package:portal_gh2026/widgets/premium_header.dart';
 
 class ScreenDashboardUtama extends StatefulWidget {
   const ScreenDashboardUtama({super.key});

@@ -175,7 +175,8 @@ export default {
         const uid = url.searchParams.get("uid");
         if (!uid) return new Response(JSON.stringify({ error: "UID required" }), { status: 400, headers: corsHeaders });
         
-        const data = await env.portal_gh2026.prepare("SELECT * FROM pegawai WHERE uid = ? OR nip = ? LIMIT 1").bind(uid, uid).first();
+        // Menggunakan TRIM untuk menghindari spasi tersembunyi
+        const data = await env.portal_gh2026.prepare("SELECT * FROM pegawai WHERE TRIM(uid) = TRIM(?) OR nip = ? LIMIT 1").bind(uid, uid).first();
         return new Response(JSON.stringify(data || null), { 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         });

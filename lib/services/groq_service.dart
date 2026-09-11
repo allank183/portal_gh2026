@@ -42,7 +42,7 @@ class GroqService {
         userUid.isNotEmpty ? presensiRepo.getRiwayatPresensiStream(userUid).first : Future.value(<PresensiModel>[]),
 
         // Index 3: Riwayat Pelatihan (D1)
-        userNip.isNotEmpty ? pelatihanRepo.getRiwayatPelatihanPegawaiStream(userNip).first : Future.value(<PelatihanModel>[]),
+        userNip.isNotEmpty ? pelatihanRepo.getRiwayatFuture(nip: userNip) : Future.value(<PelatihanModel>[]),
 
         // Index 4: PENCARIAN TARGET (SQL LIKE - Bukan ambil semua!)
         searchKey.isNotEmpty ? pegawaiRepo.searchPegawai(searchKey) : Future.value(<PegawaiModel>[]),

@@ -2,17 +2,29 @@ import 'package:flutter/material.dart';
 import '../../../../models/model_pelatihan.dart';
 import '../../../../repositories/repo_pelatihan.dart';
 
-class TabRiwayatPembanding extends StatelessWidget {
+class TabRiwayatPembanding extends StatefulWidget {
   final String nip;
-  final PelatihanRepository _pelatihanRepository = PelatihanRepository();
+  const TabRiwayatPembanding({super.key, required this.nip});
 
-  TabRiwayatPembanding({super.key, required this.nip});
+  @override
+  State<TabRiwayatPembanding> createState() => _TabRiwayatPembandingState();
+}
+
+class _TabRiwayatPembandingState extends State<TabRiwayatPembanding> {
+  final PelatihanRepository _pelatihanRepository = PelatihanRepository();
+  late Future<List<PelatihanModel>> _riwayatFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Panggil API hanya sekali saat tab dibuka
+    _riwayatFuture = _pelatihanRepository.getRiwayatFuture(nip: widget.nip);
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<PelatihanModel>>(
-      // Menggunakan Future agar tidak loading terus-menerus (no polling)
-      future: _pelatihanRepository.getRiwayatFuture(nip: nip),
+      future: _riwayatFuture, // Gunakan variabel yang sudah di-cache
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

@@ -3,11 +3,42 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../models/model_pegawai.dart';
 import '../../../../models/model_pelatihan.dart';
 import '../../../../repositories/repo_pelatihan.dart';
+import '../../../../services/service_trigger.dart';
 
-class TabStatusSertifikat extends StatelessWidget {
+class TabStatusSertifikat extends StatefulWidget {
   final PegawaiModel pegawai;
 
   const TabStatusSertifikat({super.key, required this.pegawai});
+
+  @override
+  State<TabStatusSertifikat> createState() => _TabStatusSertifikatState();
+}
+
+class _TabStatusSertifikatState extends State<TabStatusSertifikat> {
+  final PelatihanRepository _pelatihanRepository = PelatihanRepository();
+  late Future<List<PelatihanModel>> _riwayatFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+    // Dengarkan lonceng: Jika ada data pelatihan berubah, muat ulang riwayat user
+    refreshTrigger.addListener(_loadData);
+  }
+
+  void _loadData() {
+    if (mounted) {
+      setState(() {
+        _riwayatFuture = _pelatihanRepository.getRiwayatFuture(nip: widget.pegawai.nip);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_loadData);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +53,6 @@ class TabStatusSertifikat extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Header Tab Navigation (Pending, Approved, Rejected)
             Container(
               height: 42,
               decoration: BoxDecoration(
@@ -63,17 +93,15 @@ class TabStatusSertifikat extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Stream Builder Data Sertifikat
             Expanded(
-              child: StreamBuilder<List<PelatihanModel>>(
-                stream: PelatihanRepository().getRiwayatPelatihanPegawaiStream(pegawai.nip),
+              child: FutureBuilder<List<PelatihanModel>>(
+                future: _riwayatFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
                   if (snapshot.hasError) {
-                    debugPrint('Error Firestore TabStatusSertifikat: ${snapshot.error}');
                     return Center(
                       child: SelectableText(
                         'Gagal memuat data sertifikat:\n${snapshot.error}',
@@ -85,16 +113,14 @@ class TabStatusSertifikat extends StatelessWidget {
 
                   final allData = snapshot.data ?? [];
 
-                  // Filter berdasarkan status
                   final pendingList = allData.where((e) => e.status.toLowerCase() == 'pending').toList();
                   final approvedList = allData.where((e) =>
-                  e.status.toLowerCase() == 'approved' ||
-                      e.status.toLowerCase() == 'acc' ||
-                      e.status.toLowerCase() == 'disetujui'
+                    e.status.toLowerCase() == 'approved' ||
+                    e.status.toLowerCase() == 'disetujui'
                   ).toList();
                   final rejectedList = allData.where((e) =>
-                  e.status.toLowerCase() == 'rejected' ||
-                      e.status.toLowerCase() == 'ditolak'
+                    e.status.toLowerCase() == 'rejected' ||
+                    e.status.toLowerCase() == 'ditolak'
                   ).toList();
 
                   return TabBarView(
@@ -113,7 +139,6 @@ class TabStatusSertifikat extends StatelessWidget {
     );
   }
 
-  // Helper Widget untuk Menampilkan Daftar Sertifikat per Tab
   Widget _buildListSertifikat(List<PelatihanModel> list, String emptyMessage) {
     if (list.isEmpty) {
       return Center(
@@ -187,7 +212,6 @@ class TabStatusSertifikat extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    // Menampilkan alasan/catatan admin jika status Rejected
                     if (item.status.toLowerCase() == 'rejected' &&
                         (item.catatanAdmin?.trim().isNotEmpty ?? false)) ...[
                       const SizedBox(height: 8),
@@ -212,7 +236,6 @@ class TabStatusSertifikat extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: 12),
               _buildStatusBadge(item.status),
             ],
@@ -222,7 +245,6 @@ class TabStatusSertifikat extends StatelessWidget {
     );
   }
 
-  // Helper Badge Status (Pill)
   Widget _buildStatusBadge(String status) {
     Color bgColor;
     Color textColor;
@@ -231,7 +253,6 @@ class TabStatusSertifikat extends StatelessWidget {
 
     switch (status.toLowerCase()) {
       case 'approved':
-      case 'acc':
       case 'disetujui':
         bgColor = const Color(0xFFECFDF5);
         textColor = const Color(0xFF059669);

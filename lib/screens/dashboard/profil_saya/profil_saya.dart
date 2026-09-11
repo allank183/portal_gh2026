@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/model_pegawai.dart';
+import '../../../repositories/repo_pegawai.dart';
+import '../../../services/service_trigger.dart';
 import '../../../widgets/premium_header.dart';
 import '../../pelatihan/upload_pelatihan.dart';
 import 'tabs/tab_detail_pegawai.dart';
@@ -17,15 +19,34 @@ class ScreenProfilSaya extends StatefulWidget {
 
 class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late PegawaiModel _currentPegawai;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _currentPegawai = widget.pegawai;
+
+    // Dengarkan lonceng: Jika ada data pelatihan/absen berubah, muat ulang profil
+    refreshTrigger.addListener(_refreshProfileData);
+  }
+
+  Future<void> _refreshProfileData() async {
+    try {
+      final updatedData = await PegawaiRepository().getCurrentPegawai();
+      if (updatedData != null && mounted) {
+        setState(() {
+          _currentPegawai = updatedData;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error _ScreenProfilSayaState._refreshProfileData: $e');
+    }
   }
 
   @override
   void dispose() {
+    refreshTrigger.removeListener(_refreshProfileData);
     _tabController.dispose();
     super.dispose();
   }
@@ -111,8 +132,8 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        TabStatusSertifikat(pegawai: widget.pegawai),
-                        TabDetailPegawai(pegawai: widget.pegawai),
+                        TabStatusSertifikat(pegawai: _currentPegawai),
+                        TabDetailPegawai(pegawai: _currentPegawai),
                       ],
                     ),
                   ),
@@ -152,7 +173,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                     radius: 28,
                     backgroundColor: const Color(0xFFEFF6FF),
                     child: Text(
-                      widget.pegawai.nama.isNotEmpty ? widget.pegawai.nama[0].toUpperCase() : 'P',
+                      _currentPegawai.nama.isNotEmpty ? _currentPegawai.nama[0].toUpperCase() : 'P',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
@@ -169,7 +190,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                           children: [
                             Flexible(
                               child: Text(
-                                widget.pegawai.nama,
+                                _currentPegawai.nama,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.plusJakartaSans(
@@ -181,7 +202,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                             ),
                             const SizedBox(width: 8),
                             _buildBadge(
-                              widget.pegawai.kelompok.isNotEmpty ? widget.pegawai.kelompok : 'Umum',
+                              _currentPegawai.kelompok.isNotEmpty ? _currentPegawai.kelompok : 'Umum',
                               const Color(0xFF2563EB),
                               const Color(0xFFEFF6FF),
                             ),
@@ -189,7 +210,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'NIP. ${widget.pegawai.nip}  •  Role: ${widget.pegawai.role.toUpperCase()}',
+                          'NIP. ${_currentPegawai.nip}  •  Role: ${_currentPegawai.role.toUpperCase()}',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             color: const Color(0xFF475569),
@@ -197,7 +218,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                           ),
                         ),
                         Text(
-                          'Unit/Ruangan: ${widget.pegawai.ruangan.isNotEmpty ? widget.pegawai.ruangan : '-'} (${widget.pegawai.instalasi})',
+                          'Unit/Ruangan: ${_currentPegawai.ruangan.isNotEmpty ? _currentPegawai.ruangan : '-'} (${_currentPegawai.instalasi})',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11.5,
                             color: const Color(0xFF64748B),
@@ -214,7 +235,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                           context,
                           MaterialPageRoute(
                             builder: (context) => UploadSertifikatPage(
-                              pegawaiData: widget.pegawai.toFirestore(),
+                              pegawaiData: _currentPegawai.toFirestore(),
                             ),
                           ),
                         );
@@ -249,11 +270,11 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem('Total JPL', widget.pegawai.totalJpl.toString(), const Color(0xFF2563EB)),
+                  _buildStatItem('Total JPL', _currentPegawai.totalJpl.toString(), const Color(0xFF2563EB)),
                   _buildStatDivider(),
-                  _buildStatItem('Total SKP', widget.pegawai.totalSkp.toString(), const Color(0xFF059669)),
+                  _buildStatItem('Total SKP', _currentPegawai.totalSkp.toString(), const Color(0xFF059669)),
                   _buildStatDivider(),
-                  _buildStatItem('Sertifikat', widget.pegawai.totalSertifikat.toString(), const Color(0xFFD97706)),
+                  _buildStatItem('Sertifikat', _currentPegawai.totalSertifikat.toString(), const Color(0xFFD97706)),
                 ],
               ),
             ],

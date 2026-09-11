@@ -24,7 +24,7 @@ class PresensiRepository {
           yield (data != null) ? PresensiModel.fromJson(data) : null;
         }
       } catch (e) {
-        debugPrint('Error fetch aktif: $e');
+        debugPrint('Error PresensiRepository.getPresensiAktifStream: $e');
         yield null;
       }
       await Future.delayed(const Duration(seconds: 30));
@@ -87,17 +87,20 @@ class PresensiRepository {
     }
   }
 
-  /// 4. AMBIL RIWAYAT PRESENSI (DARI D1)
+  /// 4. AMBIL RIWAYAT PRESENSI (DARI D1 - Polling 60 Detik)
   Stream<List<PresensiModel>> getRiwayatPresensiStream(String uid) async* {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/riwayat-presensi?uid=$uid'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        yield data.map<PresensiModel>((json) => PresensiModel.fromJson(json as Map<String, dynamic>)).toList();
+    while (true) {
+      try {
+        final response = await http.get(Uri.parse('$_baseUrl/riwayat-presensi?uid=$uid'));
+        if (response.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(response.body);
+          yield data.map<PresensiModel>((json) => PresensiModel.fromJson(json as Map<String, dynamic>)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error PresensiRepository.getRiwayatPresensiStream: $e');
+        yield [];
       }
-    } catch (e) {
-      debugPrint('Error riwayat: $e');
-      yield [];
+      await Future.delayed(const Duration(seconds: 60));
     }
   }
 
@@ -182,7 +185,7 @@ class PresensiRepository {
 
       if (response.statusCode != 200) throw Exception('Gagal mengajukan izin ke D1');
     } catch (e) {
-      debugPrint('Error kirimPengajuanIzin D1: $e');
+      debugPrint('Error PresensiRepository.kirimPengajuanIzin: $e');
       rethrow;
     }
   }
@@ -230,7 +233,6 @@ class PresensiRepository {
         };
       }).toList();
 
-      // MENGGUNAKAN _baseUrl YANG SUDAH SESUAI
       final response = await http.post(
         Uri.parse('$_baseUrl/sync-presensi-izin'),
         headers: {'Content-Type': 'application/json'},

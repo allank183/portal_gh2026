@@ -15,7 +15,9 @@ class PegawaiRepository {
     final user = _auth.currentUser;
     if (user == null) return null;
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/pegawai?uid=${user.uid}'));
+      // Tambahkan timestamp sebagai cache-buster untuk platform Web
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final response = await http.get(Uri.parse('$_baseUrl/pegawai?uid=${user.uid}&t=$ts'));
       if (response.statusCode == 200) {
         final dynamic decoded = jsonDecode(response.body);
 
