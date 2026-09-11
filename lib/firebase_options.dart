@@ -47,28 +47,27 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAy7AN4LM_34DvjSaig_0ItuJ_mxh-58DY',
-    appId: '1:1011494856568:web:fcd99f8437ac4e0ce24a8d',
-    messagingSenderId: '1011494856568',
-    projectId: 'portal-lapker',
-    authDomain: 'portal-lapker.firebaseapp.com',
-    storageBucket: 'portal-lapker.firebasestorage.app',
+    apiKey: 'AIzaSyDJSizcT9pBEMSyoqkslfaIvWy_HC67D-E',
+    appId: '1:798907010409:web:4138dfe9d36d83b178c1f8',
+    messagingSenderId: '798907010409',
+    projectId: 'portal-kinerja-gh2026',
+    authDomain: 'portal-kinerja-gh2026.firebaseapp.com',
+    storageBucket: 'portal-kinerja-gh2026.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyApSrKt_BrYumvAs3lOrylUJIifFWZ0q38',
-    appId: '1:1011494856568:android:dfdaef69cb429b2fe24a8d',
-    messagingSenderId: '1011494856568',
-    projectId: 'portal-lapker',
-    storageBucket: 'portal-lapker.firebasestorage.app',
+    apiKey: 'AIzaSyD8mqGrcjTyuj3BkaTmgZSWuNNi1yCewIA',
+    appId: '1:798907010409:android:5c557d1d9008e5bc78c1f8',
+    messagingSenderId: '798907010409',
+    projectId: 'portal-kinerja-gh2026',
+    storageBucket: 'portal-kinerja-gh2026.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBlNytOrCkaaVIQjRYaMT7o0JTme4CNQls',
-    appId: '1:1011494856568:ios:37b9e472538c8c4fe24a8d',
-    messagingSenderId: '1011494856568',
-    projectId: 'portal-lapker',
-    storageBucket: 'portal-lapker.firebasestorage.app',
+    apiKey: 'AIzaSyDoxupozER8X0SbQ0tSMZ3fOJctsG3JTro',
+    appId: '1:798907010409:ios:72162efaf7cf001878c1f8',
+    messagingSenderId: '798907010409',
+    projectId: 'portal-kinerja-gh2026',
+    storageBucket: 'portal-kinerja-gh2026.firebasestorage.app',
     iosBundleId: 'com.lapker.portalLapker',
   );
 }
