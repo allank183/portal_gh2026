@@ -149,12 +149,15 @@ class _LoginPageState extends State<LoginPage> {
 
                         TextField(
                           controller: _emailController,
+                          textInputAction: TextInputAction.next, // Menambahkan ini agar pindah ke field berikutnya
                           decoration: _inputStyle('Email', Icons.email_outlined),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done, // Menampilkan ikon "Selesai/Masuk" di keyboard
+                          onSubmitted: (_) => _submit(), // Memicu fungsi login saat tombol Enter ditekan
                           decoration: _inputStyle('Password', Icons.lock_outline).copyWith(
                             suffixIcon: IconButton(
                               icon: Icon(
