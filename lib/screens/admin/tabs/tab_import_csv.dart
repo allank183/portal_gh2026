@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:csv/csv.dart';
+import 'package:csv/csv.dart'; 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:http/http.dart' as http;
+import 'package:excel/excel.dart' as excel_lib;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../repositories/repo_pegawai.dart';
 
@@ -24,20 +25,47 @@ class _TabImportCsvState extends State<TabImportCsv> {
   double _progress = 0.0;
   final List<String> _logs = [];
 
-  void _downloadTemplateCsv() {
-    final List<List<dynamic>> csvContent = [
-      ['nama', 'nip', 'email', 'kontak', 'jenis_kelamin', 'golongan', 'status_kepegawaian', 'kelompok', 'instalasi', 'ruangan', 'keterangan'],
-      ['HIJRAH S.Kep Ners', '198409062010122006', 'hijrah@example.com', '08114010609', 'P', 'III/d', 'PNS', 'Nakes', 'Rawat Inap', 'Perawatan Lantai 4', 'UPF BBKPM'],
-    ];
+  void _downloadTemplateExcel() {
+    var excel = excel_lib.Excel.createExcel();
+    excel_lib.Sheet sheetObject = excel['Sheet1'];
 
-    // PERBAIKAN: Gunakan class Csv() sesuai versi library Anda
-    String csvData = Csv().encode(csvContent);
+    // Header
+    sheetObject.appendRow([
+      excel_lib.TextCellValue('nama'),
+      excel_lib.TextCellValue('nip'),
+      excel_lib.TextCellValue('email'),
+      excel_lib.TextCellValue('kontak'),
+      excel_lib.TextCellValue('jenis_kelamin'),
+      excel_lib.TextCellValue('golongan'),
+      excel_lib.TextCellValue('status_kepegawaian'),
+      excel_lib.TextCellValue('kelompok'),
+      excel_lib.TextCellValue('instalasi'),
+      excel_lib.TextCellValue('ruangan'),
+      excel_lib.TextCellValue('keterangan'),
+    ]);
 
-    if (kIsWeb) {
-      final bytes = utf8.encode('\uFEFF$csvData');
-      final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
+    // Contoh Data
+    sheetObject.appendRow([
+      excel_lib.TextCellValue('HIJRAH S.Kep Ners'),
+      excel_lib.TextCellValue('198409062010122006'),
+      excel_lib.TextCellValue('hijrah@example.com'),
+      excel_lib.TextCellValue('08114010609'),
+      excel_lib.TextCellValue('P'),
+      excel_lib.TextCellValue('III/d'),
+      excel_lib.TextCellValue('PNS'),
+      excel_lib.TextCellValue('Nakes'),
+      excel_lib.TextCellValue('Rawat Inap'),
+      excel_lib.TextCellValue('Perawatan Lantai 4'),
+      excel_lib.TextCellValue('UPF BBKPM'),
+    ]);
+
+    final fileBytes = excel.encode();
+    if (fileBytes != null && kIsWeb) {
+      final blob = html.Blob([fileBytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)..setAttribute("download", "template_pegawai.csv")..click();
+      html.AnchorElement(href: url)
+        ..setAttribute("download", "template_pegawai.xlsx")
+        ..click();
       html.Url.revokeObjectUrl(url);
     }
   }
@@ -55,10 +83,9 @@ class _TabImportCsvState extends State<TabImportCsv> {
 
   Future<void> _pickFile() async {
     try {
-      // PERBAIKAN: Gunakan FilePicker.pickFiles langsung tanpa .platform
       FilePickerResult? result = await FilePicker.pickFiles(
           type: FileType.custom,
-          allowedExtensions: ['csv'],
+          allowedExtensions: ['xlsx', 'xls', 'csv'],
           withData: true
       );
 
@@ -80,38 +107,48 @@ class _TabImportCsvState extends State<TabImportCsv> {
     setState(() {
       _isProcessing = true;
       _progress = 0.0;
-      _logs.add('Memulai memproses file CSV...');
+      _logs.add('Memulai memproses file...');
     });
 
     try {
-      String csvString = utf8.decode(_selectedFile!.bytes!);
-      if (csvString.startsWith('sep=')) csvString = csvString.substring(csvString.indexOf('\n') + 1);
+      List<List<dynamic>> rows = [];
 
-      // PERBAIKAN: Gunakan Csv().decode() sesuai versi library Anda
-      List<List<dynamic>> csvData = Csv().decode(csvString);
+      if (_selectedFile!.name.toLowerCase().endsWith('.csv')) {
+        String csvString = utf8.decode(_selectedFile!.bytes!);
+        if (csvString.startsWith('sep=')) csvString = csvString.substring(csvString.indexOf('\n') + 1);
+        // Menggunakan class Csv() yang terbukti bisa di projek ini sebelumnya
+        rows = Csv().decode(csvString);
+      } else {
+        // PROSES EXCEL
+        var excel = excel_lib.Excel.decodeBytes(_selectedFile!.bytes!);
+        for (var table in excel.tables.keys) {
+          for (var row in excel.tables[table]!.rows) {
+            rows.add(row.map((cell) => cell?.value?.toString()).toList());
+          }
+        }
+      }
 
-      if (csvData.length <= 1) {
-        setState(() { _logs.add('Error: File CSV kosong.'); _isProcessing = false; });
+      if (rows.length <= 1) {
+        setState(() { _logs.add('Error: File kosong atau tidak terbaca.'); _isProcessing = false; });
         return;
       }
 
-      int totalRows = csvData.length - 1;
+      int totalRows = rows.length - 1;
       int successCount = 0;
       int failedCount = 0;
       final defaultPassword = _csvPasswordController.text.trim();
 
-      for (int i = 1; i < csvData.length; i++) {
-        final row = csvData[i];
-        if (row.isEmpty || row.length < 2) continue;
+      for (int i = 1; i < rows.length; i++) {
+        final row = rows[i];
+        if (row.isEmpty || row.length < 2 || row[0] == null) continue;
 
         String nama = row[0].toString().trim();
         String nip = row[1].toString().trim();
-        String email = row.length > 2 && row[2].toString().contains('@')
+        String email = row.length > 2 && row[2] != null && row[2].toString().contains('@')
             ? row[2].toString().trim()
             : '$nip@gh2026.internal';
 
         try {
-          // CEK NIP DI D1
           final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
           final checkRes = await http.get(Uri.parse('$baseUrl/pegawai/check-nip?nip=$nip'));
           if (jsonDecode(checkRes.body)['exists'] == true) {
@@ -120,19 +157,17 @@ class _TabImportCsvState extends State<TabImportCsv> {
             continue;
           }
 
-          // REGISTER AUTH
           UserCredential userCredential = await _createUserWithoutSwitchingSession(email, defaultPassword);
           String uid = userCredential.user!.uid;
 
-          // SIMPAN KE CLOUDFLARE D1
           await PegawaiRepository().updatePegawai({
             'uid': uid, 'nip': nip, 'nama': nama, 'email': email,
-            'jenis_kelamin': row.length > 4 ? row[4].toString() : 'L',
-            'golongan': row.length > 5 ? row[5].toString() : '',
-            'status_kepegawaian': row.length > 6 ? row[6].toString() : 'PNS',
-            'kelompok': row.length > 7 ? row[7].toString() : 'Medis',
-            'instalasi': row.length > 8 ? row[8].toString() : '',
-            'ruangan': row.length > 9 ? row[9].toString() : '',
+            'jenis_kelamin': row.length > 4 && row[4] != null ? row[4].toString() : 'L',
+            'golongan': row.length > 5 && row[5] != null ? row[5].toString() : '',
+            'status_kepegawaian': row.length > 6 && row[6] != null ? row[6].toString() : 'PNS',
+            'kelompok': row.length > 7 && row[7] != null ? row[7].toString() : 'Medis',
+            'instalasi': row.length > 8 && row[8] != null ? row[8].toString() : '',
+            'ruangan': row.length > 9 && row[9] != null ? row[9].toString() : '',
             'is_active': 1, 'is_first_login': 1, 'role': 'pegawai',
             'total_jpl': 0, 'total_sertifikat': 0, 'total_skp': 0,
           });
@@ -164,7 +199,7 @@ class _TabImportCsvState extends State<TabImportCsv> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Import Data Pegawai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              OutlinedButton.icon(onPressed: _downloadTemplateCsv, icon: const Icon(Icons.download), label: const Text('Template CSV')),
+              OutlinedButton.icon(onPressed: _downloadTemplateExcel, icon: const Icon(Icons.download), label: const Text('Template Excel')),
             ],
           ),
           const SizedBox(height: 12),
@@ -172,7 +207,7 @@ class _TabImportCsvState extends State<TabImportCsv> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade300)),
             child: InkWell(
               onTap: _isProcessing ? null : _pickFile,
-              child: Container(width: double.infinity, padding: const EdgeInsets.all(32), child: Column(children: [Icon(Icons.cloud_upload_outlined, size: 50, color: Colors.indigo.shade400), const Text('Pilih File CSV Pegawai')])),
+              child: Container(width: double.infinity, padding: const EdgeInsets.all(32), child: Column(children: [Icon(Icons.description_outlined, size: 50, color: Colors.indigo.shade400), const Text('Pilih File Excel / CSV Pegawai')])),
             ),
           ),
           const SizedBox(height: 16),
