@@ -33,7 +33,7 @@ dependencies:
   universal_html: ^2.2.4
   excel: ^4.0.6
   intl: any
-  flutter_markdown: ^0.7.7+1
+  flutter_markdown_plus: ^1.0.1
   fl_chart: ^0.68.0
 
 dev_dependencies:

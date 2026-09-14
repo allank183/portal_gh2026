@@ -76,9 +76,12 @@ STATISTIK GLOBAL: Total: ${statData.totalPegawai}, Pria: ${statData.totalLaki}, 
       // 4. Kirim ke Groq Worker
       final response = await http.post(
         Uri.parse(_workerUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'X-App-Secret': dotenv.env['AI_APP_SECRET'] ?? '',
+        },
         body: jsonEncode({
-          'model': 'openai/gpt-oss-20b',
+          'model': 'llama-3.1-70b-versatile',
           'messages': [
             {'role': 'system', 'content': systemPrompt},
             {'role': 'user', 'content': promptUser},
