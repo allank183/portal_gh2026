@@ -18,9 +18,9 @@ class PegawaiModel {
   final String jadwalKerja;
   final bool isActive;
   final bool isFirstLogin;
-  final int totalJpl;
+  final double totalJpl;
   final int totalSertifikat;
-  final int totalSkp;
+  final double totalSkp;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -90,9 +90,9 @@ class PegawaiModel {
       jadwalKerja: data['jadwal_kerja']?.toString() ?? 'Reguler',
       isActive: parseBool(data['is_active'], defaultValue: true),
       isFirstLogin: parseBool(data['is_first_login'], defaultValue: false),
-      totalJpl: (data['total_jpl'] as num?)?.toInt() ?? 0,
+      totalJpl: (data['total_jpl'] as num?)?.toDouble() ?? 0.0,
       totalSertifikat: (data['total_sertifikat'] as num?)?.toInt() ?? 0,
-      totalSkp: (data['total_skp'] as num?)?.toInt() ?? 0,
+      totalSkp: (data['total_skp'] as num?)?.toDouble() ?? 0.0,
       createdAt: parseDate(data['created_at']),
       updatedAt: parseDate(data['updated_at']),
     );

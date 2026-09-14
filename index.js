@@ -104,13 +104,14 @@ export default {
         const statements = dataPegawai.map(p => {
           return env.portal_gh2026.prepare(`
             INSERT OR REPLACE INTO pegawai 
-            (uid, nip, nama, email, role, permissions, golongan, instalasi, jenis_kelamin, kelompok, ruangan, status_kepegawaian, jadwal_kerja, total_jpl, total_sertifikat, total_skp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (uid, nip, nama, email, role, permissions, golongan, instalasi, jenis_kelamin, kelompok, keterangan, kontak, ruangan, status_kepegawaian, jadwal_kerja, total_jpl, total_sertifikat, total_skp, is_active, is_first_login)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             p.uid, p.nip, p.nama, p.email, p.role, 
             p.permissions || '', 
-            p.golongan, p.instalasi, p.jenis_kelamin, p.kelompok, p.ruangan, 
-            p.status_kepegawaian, p.jadwal_kerja, p.total_jpl, p.total_sertifikat, p.total_skp
+            p.golongan, p.instalasi, p.jenis_kelamin, p.kelompok, p.keterangan || '', p.kontak || '', p.ruangan,
+            p.status_kepegawaian, p.jadwal_kerja, p.total_jpl, p.total_sertifikat, p.total_skp,
+            p.is_active ?? 1, p.is_first_login ?? 1
           );
         });
         await env.portal_gh2026.batch(statements);
@@ -363,13 +364,16 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
         await env.portal_gh2026.prepare(`
           UPDATE pegawai SET 
             nama=?, role=?, permissions=?, jenis_kelamin=?, kelompok=?, golongan=?, 
-            instalasi=?, ruangan=?, kontak=?, updated_at=CURRENT_TIMESTAMP
+            instalasi=?, ruangan=?, kontak=?, keterangan=?, status_kepegawaian=?,
+            jadwal_kerja=?, is_active=?, updated_at=CURRENT_TIMESTAMP
           WHERE uid = ?
         `).bind(
           d.nama, d.role, 
           d.permissions || '', 
           d.jenis_kelamin, d.kelompok, d.golongan, 
-          d.instalasi, d.ruangan, d.kontak, d.uid
+          d.instalasi, d.ruangan, d.kontak || '', d.keterangan || '',
+          d.status_kepegawaian, d.jadwal_kerja || 'Reguler',
+          d.is_active ?? 1, d.uid
         ).run();
         return new Response(JSON.stringify({ success: true }), { 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -389,12 +393,21 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
       if (url.pathname === "/pegawai/add" && request.method === "POST") {
         const p = await request.json();
         await env.portal_gh2026.prepare(`
-          INSERT INTO pegawai (uid, nip, nama, email, role, permissions, golongan, instalasi, jenis_kelamin, kelompok, ruangan, status_kepegawaian)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO pegawai (
+            uid, nip, nama, email, role, permissions, golongan, instalasi,
+            jenis_kelamin, kelompok, keterangan, kontak, ruangan,
+            status_kepegawaian, jadwal_kerja, total_jpl, total_sertifikat,
+            total_skp, is_active, is_first_login
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           p.uid, p.nip, p.nama, p.email, p.role || 'pegawai', 
           p.permissions || '', 
-          p.golongan, p.instalasi, p.jenis_kelamin, p.kelompok, p.ruangan, p.status_kepegawaian
+          p.golongan, p.instalasi, p.jenis_kelamin, p.kelompok,
+          p.keterangan || '', p.kontak || '', p.ruangan,
+          p.status_kepegawaian, p.jadwal_kerja || 'Reguler',
+          p.total_jpl || 0.0, p.total_sertifikat || 0, p.total_skp || 0.0,
+          p.is_active ?? 1, p.is_first_login ?? 1
         ).run();
         return new Response(JSON.stringify({ success: true }), { 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 

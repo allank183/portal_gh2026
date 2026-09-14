@@ -6,10 +6,10 @@ import 'package:csv/csv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:http/http.dart' as http;
 import 'package:excel/excel.dart' as excel_lib;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../../models/model_pegawai.dart';
 import '../../../repositories/repo_pegawai.dart';
+import '../../../services/service_trigger.dart';
 
 class TabImportCsv extends StatefulWidget {
   const TabImportCsv({super.key});
@@ -112,11 +112,11 @@ class _TabImportCsvState extends State<TabImportCsv> {
 
     try {
       List<List<dynamic>> rows = [];
+      final repo = PegawaiRepository();
 
       if (_selectedFile!.name.toLowerCase().endsWith('.csv')) {
         String csvString = utf8.decode(_selectedFile!.bytes!);
         if (csvString.startsWith('sep=')) csvString = csvString.substring(csvString.indexOf('\n') + 1);
-        // Menggunakan class Csv() yang terbukti bisa di projek ini sebelumnya
         rows = Csv().decode(csvString);
       } else {
         // PROSES EXCEL
@@ -149,9 +149,7 @@ class _TabImportCsvState extends State<TabImportCsv> {
             : '$nip@gh2026.internal';
 
         try {
-          final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-          final checkRes = await http.get(Uri.parse('$baseUrl/pegawai/check-nip?nip=$nip'));
-          if (jsonDecode(checkRes.body)['exists'] == true) {
+          if (await repo.isNipExists(nip)) {
             setState(() => _logs.add('--> SKIP: $nama (NIP Eksis)'));
             successCount++;
             continue;
@@ -160,17 +158,33 @@ class _TabImportCsvState extends State<TabImportCsv> {
           UserCredential userCredential = await _createUserWithoutSwitchingSession(email, defaultPassword);
           String uid = userCredential.user!.uid;
 
-          await PegawaiRepository().updatePegawai({
-            'uid': uid, 'nip': nip, 'nama': nama, 'email': email,
-            'jenis_kelamin': row.length > 4 && row[4] != null ? row[4].toString() : 'L',
-            'golongan': row.length > 5 && row[5] != null ? row[5].toString() : '',
-            'status_kepegawaian': row.length > 6 && row[6] != null ? row[6].toString() : 'PNS',
-            'kelompok': row.length > 7 && row[7] != null ? row[7].toString() : 'Medis',
-            'instalasi': row.length > 8 && row[8] != null ? row[8].toString() : '',
-            'ruangan': row.length > 9 && row[9] != null ? row[9].toString() : '',
-            'is_active': 1, 'is_first_login': 1, 'role': 'pegawai',
-            'total_jpl': 0, 'total_sertifikat': 0, 'total_skp': 0,
-          });
+          // Buat objek model untuk sinkronisasi D1
+          final newPegawai = PegawaiModel(
+            uid: uid,
+            nip: nip,
+            nama: nama,
+            email: email,
+            role: 'pegawai',
+            permissions: [],
+            golongan: row.length > 5 && row[5] != null ? row[5].toString() : '',
+            instalasi: row.length > 8 && row[8] != null ? row[8].toString() : '',
+            jenisKelamin: row.length > 4 && row[4] != null ? row[4].toString() : 'L',
+            kelompok: row.length > 7 && row[7] != null ? row[7].toString() : 'Lainnya',
+            keterangan: row.length > 10 && row[10] != null ? row[10].toString() : '',
+            kontak: row.length > 3 && row[3] != null ? row[3].toString() : '',
+            ruangan: row.length > 9 && row[9] != null ? row[9].toString() : '',
+            statusKepegawaian: row.length > 6 && row[6] != null ? row[6].toString() : 'PNS',
+            jadwalKerja: 'Reguler',
+            isActive: true,
+            isFirstLogin: true,
+            totalJpl: 0.0,
+            totalSertifikat: 0,
+            totalSkp: 0.0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+
+          await repo.addPegawai(newPegawai);
 
           successCount++;
           setState(() => _logs.add('--> BERHASIL: $nama'));
@@ -181,6 +195,10 @@ class _TabImportCsvState extends State<TabImportCsv> {
         setState(() => _progress = i / totalRows);
       }
       setState(() => _logs.add('SELESAI! Berhasil: $successCount, Gagal: $failedCount'));
+      if (successCount > 0) {
+        refreshTrigger.notifyPegawaiUpdate();
+        refreshTrigger.notifyStatistikUpdate();
+      }
     } catch (e) {
       setState(() => _logs.add('Kesalahan Fatal: $e'));
     } finally {
