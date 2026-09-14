@@ -139,7 +139,7 @@ class _ScreenMarsalChatState extends State<ScreenMarsalChat> {
           border: isUser ? null : Border.all(color: Colors.grey.shade200),
         ),
         child: MarkdownBody(
-          data: msg['text'] ?? '',
+          data: (msg['text'] ?? '').replaceAll('<br>', '\n').replaceAll('<br/>', '\n'),
           styleSheet: MarkdownStyleSheet(
             p: GoogleFonts.plusJakartaSans(
               color: isUser ? Colors.white : Colors.black87,
