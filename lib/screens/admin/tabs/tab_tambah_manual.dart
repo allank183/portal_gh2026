@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../models/model_pegawai.dart';
 import '../../../repositories/repo_pegawai.dart';
 
 class TabTambahManual extends StatefulWidget {
@@ -60,32 +61,34 @@ class _TabTambahManualState extends State<TabTambahManual> {
 
       String uid = userCredential.user!.uid;
 
-      // 2. Siapkan data untuk D1 (Gunakan int 1/0 untuk bool agar awet di SQL)
-      Map<String, dynamic> pegawaiData = {
-        'uid': uid,
-        'nip': _nipController.text.trim(),
-        'nama': _namaController.text.trim(),
-        'email': _emailController.text.trim(),
-        'jenis_kelamin': _jenisKelamin,
-        'golongan': _golonganController.text.trim(),
-        'kelompok': _kelompok,
-        'instalasi': _instalasiController.text.trim(),
-        'ruangan': _ruanganController.text.trim(),
-        'kontak': _kontakController.text.trim(),
-        'keterangan': _keteranganController.text.trim(),
-        'status_kepegawaian': 'PNS',
-        'jadwal_kerja': 'Reguler',
-        'is_active': 1, // <--- Simpan sebagai Integer
-        'is_first_login': 1,
-        'role': 'pegawai',
-        'total_jpl': 0,
-        'total_sertifikat': 0,
-        'total_skp': 0,
-      };
+      // 2. Siapkan data untuk D1 menggunakan PegawaiModel
+      final newPegawai = PegawaiModel(
+        uid: uid,
+        nip: _nipController.text.trim(),
+        nama: _namaController.text.trim(),
+        email: _emailController.text.trim(),
+        role: 'pegawai',
+        permissions: [],
+        golongan: _golonganController.text.trim(),
+        instalasi: _instalasiController.text.trim(),
+        jenisKelamin: _jenisKelamin,
+        kelompok: _kelompok,
+        keterangan: _keteranganController.text.trim(),
+        kontak: _kontakController.text.trim(),
+        ruangan: _ruanganController.text.trim(),
+        statusKepegawaian: 'PNS',
+        jadwalKerja: 'Reguler',
+        isActive: true,
+        isFirstLogin: true,
+        totalJpl: 0.0,
+        totalSertifikat: 0,
+        totalSkp: 0.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
       // 3. KIRIM KE CLOUDFLARE D1 (Gunakan Repository)
-      await PegawaiRepository().updatePegawai(pegawaiData);
-      // Atau panggil http.post langsung ke $_baseUrl/pegawai/add jika Anda sudah buat endpointnya
+      await PegawaiRepository().addPegawai(newPegawai);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

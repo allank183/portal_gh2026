@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/model_pegawai.dart';
 import '../../../repositories/repo_pegawai.dart';
+import '../../../services/service_trigger.dart';
 import '../../../widgets/premium_header.dart';
 import 'tabs/tab_direktori_pegawai.dart';
 import 'tabs/tab_statistik_sdm.dart';
@@ -35,7 +36,23 @@ class _ScreenProfilSdmState extends State<ScreenProfilSdm> {
   @override
   void initState() {
     super.initState();
-    _futurePegawai = PegawaiRepository().getAllPegawai();
+    _loadData();
+    // Dengarkan lonceng: Jika ada data pegawai berubah, muat ulang list
+    refreshTrigger.addListener(_loadData);
+  }
+
+  void _loadData() {
+    if (mounted) {
+      setState(() {
+        _futurePegawai = PegawaiRepository().getAllPegawai();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_loadData);
+    super.dispose();
   }
 
   @override

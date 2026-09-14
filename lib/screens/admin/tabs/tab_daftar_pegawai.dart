@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/model_pegawai.dart';
 import '../../../repositories/repo_pegawai.dart';
+import '../../../services/service_trigger.dart';
 
 class TabDaftarPegawai extends StatefulWidget {
   const TabDaftarPegawai({super.key});
@@ -168,60 +169,65 @@ class _TabDaftarPegawaiState extends State<TabDaftarPegawai> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
-            decoration: InputDecoration(
-              hintText: 'Cari Berdasarkan Nama atau NIP...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: FutureBuilder<List<PegawaiModel>>(
-              future: _repo.getAllPegawai(), // AMBIL DARI CLOUDFLARE D1
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+    return ListenableBuilder(
+      listenable: refreshTrigger,
+      builder: (context, _) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: _searchController,
+                onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+                decoration: InputDecoration(
+                  hintText: 'Cari Berdasarkan Nama atau NIP...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: FutureBuilder<List<PegawaiModel>>(
+                  future: _repo.getAllPegawai(), // AMBIL DARI CLOUDFLARE D1
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
-                final listPegawai = (snapshot.data ?? []).where((p) {
-                  return p.nama.toLowerCase().contains(_searchQuery) || p.nip.contains(_searchQuery);
-                }).toList();
+                    final listPegawai = (snapshot.data ?? []).where((p) {
+                      return p.nama.toLowerCase().contains(_searchQuery) || p.nip.contains(_searchQuery);
+                    }).toList();
 
-                if (listPegawai.isEmpty) return const Center(child: Text('Belum ada data pegawai.'));
+                    if (listPegawai.isEmpty) return const Center(child: Text('Belum ada data pegawai.'));
 
-                return ListView.separated(
-                  itemCount: listPegawai.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final pegawai = listPegawai[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.indigo.shade100,
-                        child: Text(pegawai.nama.isNotEmpty ? pegawai.nama[0] : 'P'),
-                      ),
-                      title: Text(pegawai.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('NIP: ${pegawai.nip} | ${pegawai.instalasi} - ${pegawai.ruangan}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(icon: const Icon(Icons.edit_outlined, color: Colors.blue), onPressed: () => _showEditDialog(pegawai)),
-                          IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _confirmDeletePegawai(pegawai)),
-                        ],
-                      ),
+                    return ListView.separated(
+                      itemCount: listPegawai.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final pegawai = listPegawai[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.indigo.shade100,
+                            child: Text(pegawai.nama.isNotEmpty ? pegawai.nama[0] : 'P'),
+                          ),
+                          title: Text(pegawai.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('NIP: ${pegawai.nip} | ${pegawai.instalasi} - ${pegawai.ruangan}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(icon: const Icon(Icons.edit_outlined, color: Colors.blue), onPressed: () => _showEditDialog(pegawai)),
+                              IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _confirmDeletePegawai(pegawai)),
+                            ],
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

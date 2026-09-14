@@ -1,13 +1,12 @@
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../models/model_presensi.dart';
+import '../services/service_trigger.dart';
 
 class PresensiRepository {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
 
   String _getTodayString() {
@@ -62,6 +61,9 @@ class PresensiRepository {
         throw Exception('Gagal rekam masuk (Server Error ${response.statusCode})');
       }
     }
+
+    // Pemicu Update UI
+    refreshTrigger.notifyPresensiUpdate();
   }
 
   /// 3. REKAM PULANG (KE CLOUDFLARE D1)
@@ -83,6 +85,9 @@ class PresensiRepository {
     if (response.statusCode != 200) {
       throw Exception('Gagal rekam pulang (Server Error ${response.statusCode})');
     }
+
+    // Pemicu Update UI
+    refreshTrigger.notifyPresensiUpdate();
   }
 
   /// 4. AMBIL RIWAYAT PRESENSI (DIPANGGIL SEKALI)
@@ -180,66 +185,12 @@ class PresensiRepository {
       );
 
       if (response.statusCode != 200) throw Exception('Gagal mengajukan izin ke D1');
+
+      // Pemicu Update UI
+      refreshTrigger.notifyPresensiUpdate();
     } catch (e) {
       debugPrint('Error PresensiRepository.kirimPengajuanIzin: $e');
       rethrow;
-    }
-  }
-
-  /// Migrasi Data
-  Future<void> jalankanMigrasiPresensiKeCloudflare() async {
-    try {
-      debugPrint('Memulai Migrasi Presensi & Izin...');
-
-      final snapIzin = await _db.collection('pengajuan_izin').get();
-      final listIzin = snapIzin.docs.map((doc) => {
-        'id': doc.id,
-        'uid': doc['uid'],
-        'nama_pegawai': doc['nama_pegawai'],
-        'nip': doc['nip'],
-        'jenis_izin': doc['jenis_izin'],
-        'alasan': doc['alasan'],
-        'status': doc['status'],
-        'lampiran_url': doc['lampiran_url'],
-        'tanggal_pengajuan': (doc['tanggal_pengajuan'] as Timestamp).toDate().toIso8601String(),
-      }).toList();
-
-      final snapPresensi = await _db.collection('presensi').get();
-      final listPresensi = snapPresensi.docs.map((doc) {
-        final d = doc.data();
-        return {
-          'uid': d['uid'],
-          'nip': d['nip'],
-          'nama_pegawai': d['nama_pegawai'],
-          'tanggal': d['tanggal'],
-          'jam_masuk': d['jam_masuk'] != null ? (d['jam_masuk'] as Timestamp).toDate().toIso8601String() : null,
-          'jam_pulang': d['jam_pulang'] != null ? (d['jam_pulang'] as Timestamp).toDate().toIso8601String() : null,
-          'status': d['status'],
-          'jadwal_kerja': d['jadwal_kerja'] ?? 'Reguler',
-          'tipe_shift': d['tipe_shift'],
-          'menit_terlambat': d['menit_terlambat'] ?? 0,
-          'menit_wajib_ganti': d['menit_wajib_ganti'] ?? 0,
-          'target_jam_pulang': d['target_jam_pulang'] != null ? (d['target_jam_pulang'] as Timestamp).toDate().toIso8601String() : null,
-          'catat_masuk': d['catat_masuk'],
-          'catat_pulang': d['catat_pulang'],
-          'pengajuan_id': d['pengajuan_id'],
-          'catatan_penolakan': d['catatan_penolakan'],
-          'foto_masuk_url': d['foto_masuk_url'],
-          'foto_pulang_url': d['foto_pulang_url'],
-        };
-      }).toList();
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/sync-presensi-izin'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'listIzin': listIzin, 'listPresensi': listPresensi}),
-      );
-
-      if (response.statusCode == 200) {
-        debugPrint('MIGRASI PRESENSI & IZIN BERHASIL!');
-      }
-    } catch (e) {
-      debugPrint('Error Migrasi Presensi: $e');
     }
   }
 }

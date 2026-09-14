@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:portal_gh2026/repositories/repo_statistik.dart';
+import 'package:portal_gh2026/services/service_trigger.dart';
 
 class TabStatistikSdm extends StatefulWidget {
   const TabStatistikSdm({super.key});
@@ -14,13 +15,29 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
 
   // Inisialisasi Repository 1x saja, bukan di dalam build()
   late final StatistikRepository _statistikRepository;
-  late final Stream<DataStatistikPegawai> _statistikStream;
+  late Future<DataStatistikPegawai> _statsFuture;
 
   @override
   void initState() {
     super.initState();
     _statistikRepository = StatistikRepository();
-    _statistikStream = _statistikRepository.getStatistikStream();
+    _loadStats();
+    // Dengarkan lonceng perubahan statistik
+    refreshTrigger.addListener(_loadStats);
+  }
+
+  void _loadStats() {
+    if (mounted) {
+      setState(() {
+        _statsFuture = _statistikRepository.getStatistikData();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_loadStats);
+    super.dispose();
   }
 
   @override
@@ -30,8 +47,8 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
   Widget build(BuildContext context) {
     super.build(context); // Wajib dipanggil untuk AutomaticKeepAliveClientMixin
 
-    return StreamBuilder<DataStatistikPegawai>(
-      stream: _statistikStream,
+    return FutureBuilder<DataStatistikPegawai>(
+      future: _statsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

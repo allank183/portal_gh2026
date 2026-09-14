@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../services/service_trigger.dart';
 import '../../widgets/premium_header.dart';
 
 class ScreenVerifikasiPresensi extends StatefulWidget {
@@ -24,6 +25,13 @@ class _ScreenVerifikasiPresensiState extends State<ScreenVerifikasiPresensi> {
   void initState() {
     super.initState();
     _fetchPengajuanIzin();
+    refreshTrigger.addListener(_fetchPengajuanIzin);
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_fetchPengajuanIzin);
+    super.dispose();
   }
 
   // --- 1. MEMUAT DATA DARI CLOUDFLARE WORKER D1 ---
@@ -78,7 +86,9 @@ class _ScreenVerifikasiPresensiState extends State<ScreenVerifikasiPresensi> {
             ),
           );
         }
-        // Refresh daftar data
+        // Refresh global UI agar statistik dan riwayat user ikut update
+        refreshTrigger.notifyPresensiUpdate();
+        // Refresh daftar data internal
         _fetchPengajuanIzin();
       } else {
         throw Exception('Server mengembalikan error');

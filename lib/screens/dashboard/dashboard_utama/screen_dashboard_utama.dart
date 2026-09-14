@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../repositories/repo_statistik.dart';
+import '../../../services/service_trigger.dart';
 import 'package:portal_gh2026/widgets/premium_header.dart';
 
 class ScreenDashboardUtama extends StatefulWidget {
@@ -12,10 +13,33 @@ class ScreenDashboardUtama extends StatefulWidget {
 
 class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
   final StatistikRepository _statistikRepository = StatistikRepository();
+  late Future<DataStatistikPegawai> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+    // Dengarkan lonceng perubahan statistik
+    refreshTrigger.addListener(_loadStats);
+  }
+
+  void _loadStats() {
+    if (mounted) {
+      setState(() {
+        _statsFuture = _statistikRepository.getStatistikData();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_loadStats);
+    super.dispose();
+  }
 
   // Fungsi untuk refresh data manual
   Future<void> _handleRefresh() async {
-    setState(() {}); // Memicu pembangunan ulang widget dan panggil API D1 lagi
+    _loadStats();
   }
 
   @override
@@ -25,7 +49,7 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: FutureBuilder<DataStatistikPegawai>(
-          future: _statistikRepository.getStatistikData(),
+          future: _statsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());

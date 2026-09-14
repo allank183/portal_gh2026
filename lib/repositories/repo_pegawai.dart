@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/model_pegawai.dart';
+import '../services/service_trigger.dart';
 
 class PegawaiRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -74,6 +75,10 @@ class PegawaiRepository {
       body: jsonEncode(pegawai.toMap()),
     );
     if (response.statusCode != 200) throw Exception('Gagal tambah data di D1');
+
+    // Pemicu Update UI
+    refreshTrigger.notifyPegawaiUpdate();
+    refreshTrigger.notifyStatistikUpdate();
   }
 
   /// 5. UPDATE DATA PEGAWAI (KE D1)
@@ -99,12 +104,20 @@ class PegawaiRepository {
     if (response.statusCode != 200) {
       throw Exception('Gagal update data di D1: ${response.body}');
     }
+
+    // Pemicu Update UI
+    refreshTrigger.notifyPegawaiUpdate();
+    refreshTrigger.notifyStatistikUpdate();
   }
 
   /// 6. HAPUS PEGAWAI (DARI D1)
   Future<void> deletePegawai(String uid) async {
     final response = await http.get(Uri.parse('$_baseUrl/pegawai/delete?uid=$uid'));
     if (response.statusCode != 200) throw Exception('Gagal hapus data di D1');
+
+    // Pemicu Update UI
+    refreshTrigger.notifyPegawaiUpdate();
+    refreshTrigger.notifyStatistikUpdate();
   }
 
   /// 7. CARI PEGAWAI DI D1

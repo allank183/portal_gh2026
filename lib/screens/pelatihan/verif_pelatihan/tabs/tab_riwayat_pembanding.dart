@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/model_pelatihan.dart';
 import '../../../../repositories/repo_pelatihan.dart';
+import '../../../../services/service_trigger.dart';
 
 class TabRiwayatPembanding extends StatefulWidget {
   final String nip;
@@ -17,8 +18,23 @@ class _TabRiwayatPembandingState extends State<TabRiwayatPembanding> {
   @override
   void initState() {
     super.initState();
-    // Panggil API hanya sekali saat tab dibuka
-    _riwayatFuture = _pelatihanRepository.getRiwayatFuture(nip: widget.nip);
+    _loadData();
+    // Dengarkan lonceng: Jika ada data pelatihan berubah, muat ulang riwayat pembanding
+    refreshTrigger.addListener(_loadData);
+  }
+
+  void _loadData() {
+    if (mounted) {
+      setState(() {
+        _riwayatFuture = _pelatihanRepository.getRiwayatFuture(nip: widget.nip);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_loadData);
+    super.dispose();
   }
 
   @override

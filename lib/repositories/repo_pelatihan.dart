@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/model_pelatihan.dart';
+import '../services/service_trigger.dart';
 
 class PelatihanRepository {
   final String _baseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -86,6 +87,9 @@ class PelatihanRepository {
         body: jsonEncode(pelatihan.toMap()),
       );
       if (response.statusCode != 200) throw Exception('Gagal simpan ke D1: ${response.body}');
+      
+      refreshTrigger.notifyPelatihanUpdate();
+      refreshTrigger.notifyStatistikUpdate();
     } catch (e) {
       debugPrint('Error simpanSertifikat: $e');
       rethrow;
@@ -110,6 +114,9 @@ class PelatihanRepository {
         }),
       );
       if (response.statusCode != 200) throw Exception('Gagal approve di D1: ${response.body}');
+      
+      refreshTrigger.notifyPelatihanUpdate();
+      refreshTrigger.notifyStatistikUpdate();
     } catch (e) {
       debugPrint('Error approveSertifikat: $e');
       rethrow;
@@ -133,6 +140,9 @@ class PelatihanRepository {
         }),
       );
       if (response.statusCode != 200) throw Exception('Gagal reject di D1: ${response.body}');
+
+      refreshTrigger.notifyPelatihanUpdate();
+      refreshTrigger.notifyStatistikUpdate();
     } catch (e) {
       debugPrint('Error rejectSertifikat: $e');
       rethrow;

@@ -66,9 +66,10 @@ export default {
           env.portal_gh2026.prepare(`
             UPDATE pegawai SET 
               total_jpl = (SELECT COALESCE(SUM(jumlah_jpl), 0) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved'),
-              total_sertifikat = (SELECT COUNT(*) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved')
+              total_sertifikat = (SELECT COUNT(*) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved'),
+              total_skp = (SELECT COALESCE(SUM(jumlah_skp), 0) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved')
             WHERE uid = ?
-          `).bind(d.uid, d.uid, d.uid)
+          `).bind(d.uid, d.uid, d.uid, d.uid)
         ]);
         return new Response(JSON.stringify({ success: true }), { 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -243,9 +244,10 @@ if (url.pathname === "/pelatihan/check-kombinasi" && request.method === "POST") 
         await env.portal_gh2026.prepare(`
           UPDATE pegawai SET 
             total_jpl = (SELECT COALESCE(SUM(jumlah_jpl), 0) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved'),
-            total_sertifikat = (SELECT COUNT(*) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved')
+            total_sertifikat = (SELECT COUNT(*) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved'),
+            total_skp = (SELECT COALESCE(SUM(jumlah_skp), 0) FROM riwayat_pelatihan WHERE uid = ? AND status = 'approved')
           WHERE uid = ?
-        `).bind(uid, uid, uid).run();
+        `).bind(uid, uid, uid, uid).run();
         return new Response(JSON.stringify({ success: true }), { 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         });
