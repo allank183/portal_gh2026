@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
 
+/// Pusat Kendali Refresh Data (Action-Based Refresh)
+/// Gunakan ini untuk memicu pembaruan data di layar mana pun tanpa polling.
 class RefreshTrigger extends ChangeNotifier {
-  // Panggil ini saat data Pelatihan berubah (Upload/Approve/Reject)
+  
+  // 1. Pemicu Refresh Pelatihan (Upload, Verifikasi)
   void notifyPelatihanUpdate() {
     notifyListeners();
   }
 
-  // Panggil ini saat data Presensi berubah (Absen Masuk/Pulang/Izin)
+  // 2. Pemicu Refresh Presensi (Absen Masuk, Pulang, Izin)
   void notifyPresensiUpdate() {
+    notifyListeners();
+    // Biasanya saat presensi berubah, statistik dashboard juga perlu update
+    notifyStatistikUpdate();
+  }
+
+  // 3. Pemicu Refresh Profil Pegawai
+  void notifyPegawaiUpdate() {
+    notifyListeners();
+  }
+
+  // 4. Pemicu Refresh Statistik Dashboard
+  void notifyStatistikUpdate() {
     notifyListeners();
   }
 }
 
-// Inisialisasi secara global agar bisa dipanggil dari mana saja
+// Global Singleton
 final refreshTrigger = RefreshTrigger();

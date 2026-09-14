@@ -43,12 +43,9 @@ class PegawaiRepository {
     return null;
   }
 
-  /// 2. Stream Data Pegawai (Polling D1)
+  /// 2. Stream Data Pegawai (Bukan Polling - Hanya Ambil Sekali)
   Stream<PegawaiModel?> streamCurrentPegawai() async* {
-    while (true) {
-      yield await getCurrentPegawai();
-      await Future.delayed(const Duration(seconds: 60));
-    }
+    yield await getCurrentPegawai();
   }
 
   /// 3. Ambil Semua Data Pegawai (DARI D1)

@@ -138,6 +138,4 @@ class PelatihanRepository {
       rethrow;
     }
   }
-
-  // --- STREAM FUNCTIONS DIHAPUS UNTUK EFISIENSI KUOTA ---
 }

@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/model_pegawai.dart';
 import '../repositories/repo_pegawai.dart';
-import 'dashboard/screen_dashboard_utama.dart';
+import 'dashboard/dashboard_utama/screen_dashboard_utama.dart';
 import 'pelatihan/screen_pelatihan_pegawai.dart';
 import 'pelatihan/verif_pelatihan/screen_verifikasi_pelatihan.dart';
 import 'mahasiswa/screen_kegiatan_mahasiswa.dart';
@@ -39,7 +39,7 @@ class _MainLayoutState extends State<MainLayout> {
       // Beri jeda singkat agar Firebase Auth di Web stabil
       await Future.delayed(const Duration(milliseconds: 600));
       final user = FirebaseAuth.instance.currentUser;
-      print("INFO: UID YANG SEDANG LOGIN ADALAH -> ${user?.uid}");
+      debugPrint("INFO: UID YANG SEDANG LOGIN ADALAH -> ${user?.uid}");
 
       final pegawai = await PegawaiRepository().getCurrentPegawai();
       if (mounted) {

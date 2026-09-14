@@ -11,6 +11,7 @@ import '../../services/service_location.dart';
 import '../../repositories/repo_pegawai.dart';
 import '../../repositories/repo_presensi.dart';
 import '../../services/service_storage.dart';
+import '../../services/service_trigger.dart';
 import '../../widgets/premium_header.dart';
 
 class ScreenPresensi extends StatefulWidget {
@@ -31,20 +32,32 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
 
   String? _selectedShift;
 
-  // Cache Stream agar tidak membuat koneksi baru saat rebuild (Mencegah Request Storm)
-  late Stream<PresensiModel?> _presensiAktifStream;
-  late Stream<List<PresensiModel>> _riwayatPresensiStream;
+  // Menggunakan Future (Bukan Stream Polling)
+  Future<PresensiModel?>? _presensiAktifFuture;
+  Future<List<PresensiModel>>? _riwayatPresensiFuture;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _refreshData();
+    refreshTrigger.addListener(_refreshData);
+  }
 
-    // Inisialisasi stream hanya sekali di awal
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_refreshData);
+    super.dispose();
+  }
+
+  // Fungsi Pusat untuk Refresh Data
+  void _refreshData() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _presensiAktifStream = _presensiRepository.getPresensiAktifStream(user.uid);
-      _riwayatPresensiStream = _presensiRepository.getRiwayatPresensiStream(user.uid);
+      setState(() {
+        _presensiAktifFuture = _presensiRepository.getPresensiAktif(user.uid);
+        _riwayatPresensiFuture = _presensiRepository.getRiwayatPresensi(user.uid);
+      });
     }
   }
 
@@ -117,8 +130,8 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
   Widget _buildPresensiHariIniCard() {
     bool isShiftUser = _currentUser?.jadwalKerja == 'Shift';
 
-    return StreamBuilder<PresensiModel?>(
-      stream: _presensiAktifStream, // Menggunakan cache variabel
+    return FutureBuilder<PresensiModel?>(
+      future: _presensiAktifFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Card(
@@ -529,6 +542,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                       );
 
                       if (mounted) {
+                        refreshTrigger.notifyPresensiUpdate(); // Memicu refresh global
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text('Pengajuan $selectedJenis berhasil dikirim!'),
@@ -633,6 +647,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
         setState(() {
           _selectedShift = null;
         });
+        refreshTrigger.notifyPresensiUpdate(); // Memicu refresh global
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Presensi Masuk Berhasil!'),
@@ -660,6 +675,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
       await _serviceLocation.getCurrentLocationAndValidate();
       await _presensiRepository.rekamPulang(docId: docId);
       if (mounted) {
+        refreshTrigger.notifyPresensiUpdate(); // Memicu refresh global
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Presensi Pulang Berhasil!'),
@@ -717,8 +733,8 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
   }
 
   Widget _buildRiwayatPresensiTable() {
-    return StreamBuilder<List<PresensiModel>>(
-      stream: _riwayatPresensiStream, // Menggunakan cache variabel
+    return FutureBuilder<List<PresensiModel>>(
+      future: _riwayatPresensiFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Card(

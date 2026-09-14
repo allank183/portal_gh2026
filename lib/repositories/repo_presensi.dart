@@ -14,20 +14,18 @@ class PresensiRepository {
     return DateFormat('yyyy-MM-dd').format(DateTime.now());
   }
 
-  /// 1. AMBIL PRESENSI AKTIF (Optimasi: Polling 30 Detik)
-  Stream<PresensiModel?> getPresensiAktifStream(String uid) async* {
-    while (true) {
-      try {
-        final response = await http.get(Uri.parse('$_baseUrl/presensi-aktif?uid=$uid'));
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          yield (data != null) ? PresensiModel.fromJson(data) : null;
-        }
-      } catch (e) {
-        debugPrint('Error PresensiRepository.getPresensiAktifStream: $e');
-        yield null;
+  /// 1. AMBIL PRESENSI AKTIF (DIPANGGIL SEKALI)
+  Future<PresensiModel?> getPresensiAktif(String uid) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/presensi-aktif?uid=$uid'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return (data != null) ? PresensiModel.fromJson(data) : null;
       }
-      await Future.delayed(const Duration(seconds: 30));
+      return null;
+    } catch (e) {
+      debugPrint('Error PresensiRepository.getPresensiAktif: $e');
+      return null;
     }
   }
 
@@ -87,20 +85,18 @@ class PresensiRepository {
     }
   }
 
-  /// 4. AMBIL RIWAYAT PRESENSI (DARI D1 - Polling 60 Detik)
-  Stream<List<PresensiModel>> getRiwayatPresensiStream(String uid) async* {
-    while (true) {
-      try {
-        final response = await http.get(Uri.parse('$_baseUrl/riwayat-presensi?uid=$uid'));
-        if (response.statusCode == 200) {
-          final List<dynamic> data = jsonDecode(response.body);
-          yield data.map<PresensiModel>((json) => PresensiModel.fromJson(json as Map<String, dynamic>)).toList();
-        }
-      } catch (e) {
-        debugPrint('Error PresensiRepository.getRiwayatPresensiStream: $e');
-        yield [];
+  /// 4. AMBIL RIWAYAT PRESENSI (DIPANGGIL SEKALI)
+  Future<List<PresensiModel>> getRiwayatPresensi(String uid) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/riwayat-presensi?uid=$uid'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map<PresensiModel>((json) => PresensiModel.fromJson(json as Map<String, dynamic>)).toList();
       }
-      await Future.delayed(const Duration(seconds: 60));
+      return [];
+    } catch (e) {
+      debugPrint('Error PresensiRepository.getRiwayatPresensi: $e');
+      return [];
     }
   }
 
