@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
@@ -81,7 +82,7 @@ STATISTIK GLOBAL: Total: ${statData.totalPegawai}, Pria: ${statData.totalLaki}, 
           'X-App-Secret': dotenv.env['AI_APP_SECRET'] ?? '',
         },
         body: jsonEncode({
-          'model': 'llama-3.1-70b-versatile',
+          'model': 'openai/gpt-oss-20b',
           'messages': [
             {'role': 'system', 'content': systemPrompt},
             {'role': 'user', 'content': promptUser},
@@ -93,8 +94,11 @@ STATISTIK GLOBAL: Total: ${statData.totalPegawai}, Pria: ${statData.totalLaki}, 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'];
+      } else {
+        // Tambahkan log detail untuk debugging jika bukan 200
+        debugPrint("AI ERROR ${response.statusCode}: ${response.body}");
+        return "Marsal sedang mengalami kendala teknis (Error ${response.statusCode}). Silakan coba sesaat lagi.";
       }
-      return "Maaf, AI sedang sibuk. Silakan coba lagi.";
     } catch (e) {
       return "Terjadi kesalahan koneksi AI: $e";
     }
