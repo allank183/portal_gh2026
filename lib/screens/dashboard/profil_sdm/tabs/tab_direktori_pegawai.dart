@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../models/model_pegawai.dart';
+import '../../../../services/service_trigger.dart';
 
 class TabDirektoriPegawai extends StatefulWidget {
   final List<PegawaiModel> listPegawai;
@@ -24,119 +25,124 @@ class _TabDirektoriPegawaiState extends State<TabDirektoriPegawai> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredList = widget.listPegawai.where((p) {
-      final query = _searchQuery.toLowerCase();
-      return p.nama.toLowerCase().contains(query) ||
-          p.nip.toLowerCase().contains(query) ||
-          p.instalasi.toLowerCase().contains(query) ||
-          p.ruangan.toLowerCase().contains(query);
-    }).toList();
+    return ListenableBuilder(
+      listenable: refreshTrigger,
+      builder: (context, _) {
+        final filteredList = widget.listPegawai.where((p) {
+          final query = _searchQuery.toLowerCase();
+          return p.nama.toLowerCase().contains(query) ||
+              p.nip.toLowerCase().contains(query) ||
+              p.instalasi.toLowerCase().contains(query) ||
+              p.ruangan.toLowerCase().contains(query);
+        }).toList();
 
-    // BUNGKUS CONTAINER DENGAN SingleChildScrollView TERLEBIH DAHULU
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24.0), // Padding bawah agar scroll nyaman
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // Tambahkan ini agar mengikuti tinggi konten
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        // BUNGKUS CONTAINER DENGAN SingleChildScrollView TERLEBIH DAHULU
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 24.0), // Padding bawah agar scroll nyaman
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Tambahkan ini agar mengikuti tinggi konten
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Direktori Pegawai',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF0F172A),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Direktori Pegawai',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                          Text(
+                            'Menampilkan ${filteredList.length} dari ${widget.listPegawai.length} data pegawai',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Menampilkan ${filteredList.length} dari ${widget.listPegawai.length} data pegawai',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          color: const Color(0xFF64748B),
+                      SizedBox(
+                        width: 300,
+                        height: 42,
+                        child: TextField(
+                          onChanged: (val) => setState(() => _searchQuery = val),
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Cari Nama, NIP, Ruangan...',
+                            hintStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8)),
+                            prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: EdgeInsets.zero,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(
-                    width: 300,
-                    height: 42,
-                    child: TextField(
-                      onChanged: (val) => setState(() => _searchQuery = val),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: 'Cari Nama, NIP, Ruangan...',
-                        hintStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        contentPadding: EdgeInsets.zero,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-                        ),
+                ),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width > 1200
+                        ? MediaQuery.of(context).size.width - 120
+                        : 1000,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        cardColor: Colors.white,
+                        dividerColor: const Color(0xFFF1F5F9),
+                      ),
+                      child: PaginatedDataTable(
+                        rowsPerPage: 10,
+                        horizontalMargin: 20,
+                        showCheckboxColumn: false,
+                        columns: [
+                          DataColumn(label: _tableHeader('No')),
+                          DataColumn(label: _tableHeader('Nama Lengkap')),
+                          DataColumn(label: _tableHeader('NIP')),
+                          DataColumn(label: _tableHeader('Kelompok')),
+                          DataColumn(label: _tableHeader('Status')),
+                          DataColumn(label: _tableHeader('Golongan')),
+                          DataColumn(label: _tableHeader('Instalasi')),
+                          DataColumn(label: _tableHeader('Ruangan')),
+                        ],
+                        source: ModernPegawaiTableSource(filteredList, widget.colorMap),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width > 1200
-                    ? MediaQuery.of(context).size.width - 120
-                    : 1000,
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    cardColor: Colors.white,
-                    dividerColor: const Color(0xFFF1F5F9),
-                  ),
-                  child: PaginatedDataTable(
-                    rowsPerPage: 10,
-                    horizontalMargin: 20,
-                    showCheckboxColumn: false,
-                    columns: [
-                      DataColumn(label: _tableHeader('No')),
-                      DataColumn(label: _tableHeader('Nama Lengkap')),
-                      DataColumn(label: _tableHeader('NIP')),
-                      DataColumn(label: _tableHeader('Kelompok')),
-                      DataColumn(label: _tableHeader('Status')),
-                      DataColumn(label: _tableHeader('Golongan')),
-                      DataColumn(label: _tableHeader('Instalasi')),
-                      DataColumn(label: _tableHeader('Ruangan')),
-                    ],
-                    source: ModernPegawaiTableSource(filteredList, widget.colorMap),
-                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
