@@ -25,6 +25,11 @@ class RefreshTrigger extends ChangeNotifier {
   void notifyStatistikUpdate() {
     notifyListeners();
   }
+
+  // 5. Pemicu Refresh Data Mahasiswa (Kampus, Tarif, Kegiatan)
+  void notifyMahasiswaUpdate() {
+    notifyListeners();
+  }
 }
 
 // Global Singleton

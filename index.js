@@ -421,7 +421,61 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
         const nip = url.searchParams.get("nip");
         const data = await env.portal_gh2026.prepare("SELECT uid FROM pegawai WHERE nip = ? LIMIT 1").bind(nip).first();
         return new Response(JSON.stringify({ exists: !!data }), { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // --- ENDPOINT KAMPUS ---
+      if (url.pathname === "/kampus/all" && request.method === "GET") {
+        const { results } = await env.portal_gh2026.prepare("SELECT * FROM kampus ORDER BY nama_kampus ASC").all();
+        return new Response(JSON.stringify(results), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/kampus/add" && request.method === "POST") {
+        const k = await request.json();
+        await env.portal_gh2026.prepare(`
+          INSERT INTO kampus (nama_kampus, singkatan, alamat) VALUES (?, ?, ?)
+        `).bind(k.nama_kampus, k.singkatan, k.alamat).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/kampus/delete" && request.method === "GET") {
+        const id = url.searchParams.get("id");
+        await env.portal_gh2026.prepare("DELETE FROM kampus WHERE id = ?").bind(id).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // --- ENDPOINT TARIF MAHASISWA ---
+      if (url.pathname === "/tarif-mahasiswa/all" && request.method === "GET") {
+        const { results } = await env.portal_gh2026.prepare("SELECT * FROM tarif_mahasiswa ORDER BY jenis ASC, jenjang ASC").all();
+        return new Response(JSON.stringify(results), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/tarif-mahasiswa/add" && request.method === "POST") {
+        const t = await request.json();
+        await env.portal_gh2026.prepare(`
+          INSERT INTO tarif_mahasiswa (jenis, jenjang, biaya, satuan) VALUES (?, ?, ?, ?)
+        `).bind(t.jenis, t.jenjang, t.biaya, t.satuan || 'hari').run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/tarif-mahasiswa/update" && request.method === "POST") {
+        const t = await request.json();
+        await env.portal_gh2026.prepare(`
+          UPDATE tarif_mahasiswa SET jenis=?, jenjang=?, biaya=?, satuan=? WHERE id=?
+        `).bind(t.jenis, t.jenjang, t.biaya, t.satuan, t.id).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
 
