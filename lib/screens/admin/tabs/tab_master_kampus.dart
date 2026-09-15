@@ -104,7 +104,7 @@ class _TabMasterKampusState extends State<TabMasterKampus> {
 
                 return ListView.separated(
                   itemCount: list.length,
-                  separatorBuilder: (_, __) => const Divider(),
+                  separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
                     final k = list[index];
                     return ListTile(

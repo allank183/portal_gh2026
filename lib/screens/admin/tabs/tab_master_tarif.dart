@@ -52,7 +52,7 @@ class _TabMasterTarifState extends State<TabMasterTarif> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedJenis,
+                  initialValue: selectedJenis,
                   decoration: const InputDecoration(labelText: 'Jenis Kegiatan'),
                   items: const [
                     DropdownMenuItem(value: 'Penelitian', child: Text('Penelitian')),
@@ -65,7 +65,7 @@ class _TabMasterTarifState extends State<TabMasterTarif> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedJenjang,
+                  initialValue: selectedJenjang,
                   decoration: const InputDecoration(labelText: 'Jenjang Pendidikan'),
                   items: const [
                     DropdownMenuItem(value: 'SMK', child: Text('SMK')),
@@ -87,7 +87,7 @@ class _TabMasterTarifState extends State<TabMasterTarif> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedSatuan,
+                  initialValue: selectedSatuan,
                   decoration: const InputDecoration(labelText: 'Satuan Waktu'),
                   items: const [
                     DropdownMenuItem(value: 'Hari', child: Text('Hari')),
@@ -154,7 +154,7 @@ class _TabMasterTarifState extends State<TabMasterTarif> {
 
                 return ListView.separated(
                   itemCount: list.length,
-                  separatorBuilder: (_, __) => const Divider(),
+                  separatorBuilder: (context, index) => const Divider(),
                   itemBuilder: (context, index) {
                     final t = list[index];
                     return ListTile(

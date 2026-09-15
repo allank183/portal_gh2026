@@ -12,6 +12,7 @@ android {
     namespace = "com.lapker.portal_lapker"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    buildToolsVersion = "34.0.0"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -20,6 +21,11 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+    
+    // Tambahkan Java Toolchain agar Gradle otomatis menggunakan Java 17
+    kotlin {
+        jvmToolchain(17)
     }
 
     defaultConfig {

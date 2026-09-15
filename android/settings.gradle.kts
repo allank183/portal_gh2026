@@ -27,3 +27,15 @@ plugins {
 }
 
 include(":app")
+
+// Paksa semua plugin/subproject menggunakan Build-Tools 34.0.0
+gradle.beforeProject {
+    plugins.withId("com.android.application") {
+        val android = extensions.findByName("android") as? com.android.build.gradle.AppExtension
+        android?.buildToolsVersion("34.0.0")
+    }
+    plugins.withId("com.android.library") {
+        val android = extensions.findByName("android") as? com.android.build.gradle.LibraryExtension
+        android?.buildToolsVersion("34.0.0")
+    }
+}
