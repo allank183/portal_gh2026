@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:portal_gh2026/repositories/repo_statistik.dart';
 import 'package:portal_gh2026/services/service_trigger.dart';
 
@@ -91,9 +92,9 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
                       title: 'Jenis Kelamin',
                       icon: Icons.wc_rounded,
                       color: Colors.indigo,
-                      items: [
-                        _buildProgressItem('Laki-laki', data.totalLaki, data.totalPegawai, Colors.blue),
-                        _buildProgressItem('Perempuan', data.totalPerempuan, data.totalPegawai, Colors.pink),
+                      sections: [
+                        _PieData(value: data.totalLaki.toDouble(), color: Colors.blue, label: 'Laki-laki'),
+                        _PieData(value: data.totalPerempuan.toDouble(), color: Colors.pink, label: 'Perempuan'),
                       ],
                     ),
                   ),
@@ -103,10 +104,10 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
                       title: 'Kelompok SDM',
                       icon: Icons.local_hospital_rounded,
                       color: Colors.teal,
-                      items: [
-                        _buildProgressItem('Nakes', data.totalNakes, data.totalPegawai, Colors.cyan),
-                        _buildProgressItem('Medis', data.totalMedis, data.totalPegawai, Colors.teal),
-                        _buildProgressItem('Admin', data.totalAdmin, data.totalPegawai, Colors.amber.shade800),
+                      sections: [
+                        _PieData(value: data.totalMedis.toDouble(), color: Colors.teal, label: 'Medis'),
+                        _PieData(value: data.totalNakes.toDouble(), color: Colors.cyan, label: 'Nakes'),
+                        _PieData(value: data.totalAdmin.toDouble(), color: Colors.amber.shade800, label: 'Admin'),
                       ],
                     ),
                   ),
@@ -116,10 +117,10 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
                       title: 'Status Kepegawaian',
                       icon: Icons.badge_rounded,
                       color: Colors.orange.shade800,
-                      items: [
-                        _buildProgressItem('PNS', data.totalPns, data.totalPegawai, Colors.orange),
-                        _buildProgressItem('P3K', data.totalP3k, data.totalPegawai, Colors.deepOrange),
-                        _buildProgressItem('BLU', data.totalBlu, data.totalPegawai, Colors.brown),
+                      sections: [
+                        _PieData(value: data.totalPns.toDouble(), color: Colors.orange, label: 'PNS'),
+                        _PieData(value: data.totalP3k.toDouble(), color: Colors.deepOrange, label: 'P3K'),
+                        _PieData(value: data.totalBlu.toDouble(), color: Colors.brown, label: 'BLU'),
                       ],
                     ),
                   ),
@@ -136,8 +137,10 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
     required String title,
     required IconData icon,
     required Color color,
-    required List<Widget> items,
+    required List<_PieData> sections,
   }) {
+    double total = sections.fold(0, (sum, item) => sum + item.value);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -159,44 +162,81 @@ class _TabStatistikSdmState extends State<TabStatistikSdm>
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+              Text(
+                title,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Divider(color: Colors.grey.shade200, height: 1),
-          const SizedBox(height: 12),
-          ...items,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressItem(String label, int value, int total, Color color) {
-    double percentage = total > 0 ? (value / total) : 0.0;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Column(
-        children: [
+          const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
-              Text('$value (${(percentage * 100).toStringAsFixed(1)}%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+              // PIE CHART
+              SizedBox(
+                height: 100,
+                width: 100,
+                child: total == 0
+                    ? Center(child: Text("0", style: TextStyle(color: Colors.grey.shade400)))
+                    : PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 20,
+                          sections: sections.map((data) {
+                            return PieChartSectionData(
+                              color: data.color,
+                              value: data.value,
+                              title: '',
+                              radius: 25,
+                            );
+                          }).toList(),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 20),
+              // LEGENDA
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: sections.map((data) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(color: data.color, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              data.label,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                          Text(
+                            '${data.value.toInt()}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage,
-              backgroundColor: Colors.grey.shade100,
-              color: color,
-              minHeight: 6,
-            ),
           ),
         ],
       ),
     );
   }
+}
+
+// Data model bantuan untuk Pie Chart
+class _PieData {
+  final double value;
+  final Color color;
+  final String label;
+
+  _PieData({required this.value, required this.color, required this.label});
 }

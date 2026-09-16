@@ -412,7 +412,7 @@ class AboutSystemScreen extends StatelessWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            _buildTechBadge('Flutter 3.24', Icons.bolt, Colors.blue),
+            _buildTechBadge('Flutter', Icons.bolt, Colors.blue),
             _buildTechBadge('Firebase', Icons.cloud, Colors.orange),
             _buildTechBadge('Cloudflare', Icons.cloud_done_rounded, Colors.deepOrange),
             _buildTechBadge('HAKI Protected', Icons.security, Colors.green),
