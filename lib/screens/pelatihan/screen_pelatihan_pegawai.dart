@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../../repositories/repo_pelatihan.dart';
+import '../../services/service_trigger.dart';
 import '../../widgets/premium_header.dart';
 import 'upload_pelatihan.dart';
 
@@ -28,6 +29,15 @@ class _ScreenPelatihanPegawaiState extends State<ScreenPelatihanPegawai> {
   void initState() {
     super.initState();
     _fetchPegawaiData();
+    // Dengarkan pemicu refresh jika ada perubahan pelatihan/sertifikat global
+    refreshTrigger.addListener(_fetchPegawaiData);
+  }
+
+  @override
+  void dispose() {
+    refreshTrigger.removeListener(_fetchPegawaiData);
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchPegawaiData() async {
