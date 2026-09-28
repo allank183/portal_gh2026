@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../models/model_mahasiswa.dart';
 import '../../models/model_tarif_mahasiswa.dart';
 import '../../repositories/repo_mahasiswa.dart';
@@ -275,10 +276,49 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                 }
                 final list = snapshot.data ?? [];
                 
-                // HITUNG METRIK
+                // HITUNG STATISTIK & REKAPITULASI
                 final int totalMahasiswa = list.length;
                 final int mahasiswaAktif = list.where((m) => m.status.toLowerCase() == 'aktif').length;
+                final int totalKampus = list.map((m) => m.namaKampus.trim().toLowerCase()).toSet().length;
                 final double totalPendapatan = list.fold(0.0, (sum, item) => sum + item.biaya);
+
+                // Grouping Jenis Kegiatan
+                final Map<String, int> jenisKegiatanMap = {};
+                for (var m in list) {
+                  jenisKegiatanMap[m.jenisKegiatan] = (jenisKegiatanMap[m.jenisKegiatan] ?? 0) + 1;
+                }
+
+                // Grouping Jenjang
+                final Map<String, int> jenjangMap = {};
+                for (var m in list) {
+                  jenjangMap[m.jenjang] = (jenjangMap[m.jenjang] ?? 0) + 1;
+                }
+
+                // Warna untuk Pie Chart
+                final List<Color> chartColors = [
+                  Colors.blue,
+                  Colors.purple,
+                  Colors.teal,
+                  Colors.orange,
+                  Colors.pink,
+                  Colors.indigo,
+                  Colors.amber,
+                  Colors.cyan,
+                ];
+
+                int colorIdx = 0;
+                final List<_PieData> jenisPieData = jenisKegiatanMap.entries.map((e) {
+                  final color = chartColors[colorIdx % chartColors.length];
+                  colorIdx++;
+                  return _PieData(e.key, e.value.toDouble(), color);
+                }).toList();
+
+                colorIdx = 0;
+                final List<_PieData> jenjangPieData = jenjangMap.entries.map((e) {
+                  final color = chartColors[colorIdx % chartColors.length];
+                  colorIdx++;
+                  return _PieData(e.key, e.value.toDouble(), color);
+                }).toList();
 
                 return RefreshIndicator(
                   onRefresh: () async => _loadData(),
@@ -311,10 +351,12 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                         ),
                         const SizedBox(height: 20),
 
-                        // KARTU METRIK UTAMA
+                        // KARTU METRIK UTAMA (4 Kartu)
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            double cardWidth = constraints.maxWidth > 700 ? (constraints.maxWidth - 32) / 3 : constraints.maxWidth;
+                            double cardWidth = constraints.maxWidth > 900 
+                                ? (constraints.maxWidth - 48) / 4 
+                                : (constraints.maxWidth > 600 ? (constraints.maxWidth - 16) / 2 : constraints.maxWidth);
                             return Wrap(
                               spacing: 16,
                               runSpacing: 16,
@@ -340,10 +382,51 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                                 SizedBox(
                                   width: cardWidth,
                                   child: _buildMetricCard(
+                                    title: 'Total Kampus Mitra',
+                                    value: totalKampus.toString(),
+                                    icon: Icons.school_rounded,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: cardWidth,
+                                  child: _buildMetricCard(
                                     title: 'Total Pendapatan',
                                     value: NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(totalPendapatan),
                                     icon: Icons.account_balance_wallet_rounded,
                                     color: Colors.indigo,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // KARTU PIE CHART BREAKDOWN (Jenis Kegiatan & Jenjang Pendidikan)
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double breakdownWidth = constraints.maxWidth > 800 ? (constraints.maxWidth - 16) / 2 : constraints.maxWidth;
+                            return Wrap(
+                              spacing: 16,
+                              runSpacing: 16,
+                              children: [
+                                SizedBox(
+                                  width: breakdownWidth,
+                                  child: _buildBreakdownCard(
+                                    title: 'Perbandingan Jenis Kegiatan',
+                                    icon: Icons.pie_chart_rounded,
+                                    color: Colors.purple,
+                                    sections: jenisPieData,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: breakdownWidth,
+                                  child: _buildBreakdownCard(
+                                    title: 'Perbandingan Jenjang Pendidikan',
+                                    icon: Icons.bar_chart_rounded,
+                                    color: Colors.teal,
+                                    sections: jenjangPieData,
                                   ),
                                 ),
                               ],
@@ -509,4 +592,89 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
       ),
     );
   }
+
+  Widget _buildBreakdownCard({required String title, required IconData icon, required Color color, required List<_PieData> sections}) {
+    double total = sections.fold(0, (sum, item) => sum + item.value);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 15, color: const Color(0xFF1E293B))),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            children: [
+              SizedBox(
+                height: 100,
+                width: 100,
+                child: total == 0
+                    ? Center(child: Text("0", style: TextStyle(color: Colors.grey.shade400)))
+                    : PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 25,
+                          sections: sections.map((data) {
+                            return PieChartSectionData(
+                              color: data.color,
+                              value: data.value,
+                              title: '',
+                              radius: 25,
+                            );
+                          }).toList(),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: sections.isEmpty
+                      ? [const Text('Belum ada data tersedia.', style: TextStyle(color: Colors.grey, fontSize: 13))]
+                      : sections.map((data) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(color: data.color, shape: BoxShape.circle),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(data.label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                                ),
+                                Text('${data.value.toInt()}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PieData {
+  final String label;
+  final double value;
+  final Color color;
+  _PieData(this.label, this.value, this.color);
 }

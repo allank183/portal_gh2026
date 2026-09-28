@@ -7,9 +7,11 @@ import '../repositories/repo_pegawai.dart';
 import '../repositories/repo_pelatihan.dart';
 import '../repositories/repo_presensi.dart';
 import '../repositories/repo_statistik.dart';
+import '../repositories/repo_mahasiswa.dart';
 import '../models/model_pegawai.dart';
 import '../models/model_pelatihan.dart';
 import '../models/model_presensi.dart';
+import '../models/model_mahasiswa.dart';
 
 class GroqService {
   static String get _workerUrl => dotenv.env['GROQ_WORKER_URL'] ?? '';
@@ -23,6 +25,7 @@ class GroqService {
       final pelatihanRepo = PelatihanRepository();
       final presensiRepo = PresensiRepository();
       final statistikRepo = StatistikRepository();
+      final mahasiswaRepo = MahasiswaRepository();
 
       final String userNip = (userData['nip'] ?? '').toString().trim();
       final String userUid = (userData['uid'] ?? '').toString().trim();
@@ -45,14 +48,18 @@ class GroqService {
         // Index 3: Riwayat Pelatihan (D1)
         userNip.isNotEmpty ? pelatihanRepo.getRiwayatFuture(nip: userNip) : Future.value(<PelatihanModel>[]),
 
-        // Index 4: PENCARIAN TARGET (SQL LIKE - Bukan ambil semua!)
+        // Index 4: PENCARIAN TARGET (SQL LIKE)
         searchKey.isNotEmpty ? pegawaiRepo.searchPegawai(searchKey) : Future.value(<PegawaiModel>[]),
+
+        // Index 5: Kegiatan Mahasiswa (D1)
+        mahasiswaRepo.getAllMahasiswaKegiatan(),
       ]);
 
       final statData = results[0] as DataStatistikPegawai;
       final currentPegawai = results[1] as PegawaiModel?;
       final listPelatihan = results[3] as List<PelatihanModel>;
       final searchResult = results[4] as List<PegawaiModel>;
+      final listMahasiswa = results[5] as List<MahasiswaKegiatanModel>;
 
       // 3. Format Data untuk AI
       String infoPencarian = searchResult.isNotEmpty
@@ -63,9 +70,19 @@ class GroqService {
           ? listPelatihan.take(5).map((pl) => "• ${pl.judulPelatihan} (${pl.jumlahJpl} JPL) - ${pl.status}").join('\n')
           : "Belum ada riwayat pelatihan.";
 
+      // Statistik & Info Mahasiswa Kegiatan
+      final int totalMhs = listMahasiswa.length;
+      final int mhsAktif = listMahasiswa.where((m) => m.status.toLowerCase() == 'aktif').length;
+      final double totalPendapatanMhs = listMahasiswa.fold(0.0, (sum, m) => sum + m.biaya);
+      final int totalKampusMitra = listMahasiswa.map((m) => m.namaKampus.trim().toLowerCase()).toSet().length;
+
+      String infoMahasiswa = listMahasiswa.isNotEmpty
+          ? listMahasiswa.take(10).map((m) => "• Nama: ${m.nama} | NIM: ${m.nim} | Kampus: ${m.namaKampus} | Kegiatan: ${m.jenisKegiatan} (${m.jenjang}) | Status: ${m.status} | Biaya: Rp ${m.biaya}").join('\n')
+          : "Belum ada data mahasiswa kegiatan terdaftar.";
+
       final String systemPrompt = '''
-Anda adalah Marsal, Asisten Dashboard SDM Cerdas. 
-TUGAS ANDA: Memberikan informasi dan analisis data berdasarkan data di bawah ini.
+Anda adalah Marsal, Asisten Dashboard SDM & Akademik Cerdas. 
+TUGAS ANDA: Memberikan informasi dan analisis data berdasarkan data di bawah ini, termasuk data kepegawaian dan kegiatan mahasiswa.
 
 ATURAN FORMAT JAWABAN:
 1. GUNAKAN MARKDOWN MURNI. JANGAN gunakan tag HTML seperti <br>, <b>, <i>.
@@ -81,7 +98,14 @@ RIWAYAT PELATIHAN USER:
 $infoPelatihan
 HASIL PENCARIAN PEGAWAI LAIN:
 $infoPencarian
-STATISTIK GLOBAL: Total: ${statData.totalPegawai}, Pria: ${statData.totalLaki}, Wanita: ${statData.totalPerempuan}, Capai Target: ${statData.totalCukup40Jpl}.
+STATISTIK GLOBAL PEGAWAI: Total: ${statData.totalPegawai}, Pria: ${statData.totalLaki}, Wanita: ${statData.totalPerempuan}, Capai Target: ${statData.totalCukup40Jpl}.
+
+REKAPITULASI KEGIATAN MAHASISWA:
+- Total Mahasiswa: $totalMhs (Aktif: $mhsAktif)
+- Total Kampus Mitra: $totalKampusMitra
+- Total Pendapatan Mahasiswa: Rp $totalPendapatanMhs
+- Daftar Mahasiswa Kegiatan:
+$infoMahasiswa
 ''';
 
       // 4. Kirim ke Groq Worker
@@ -105,7 +129,6 @@ STATISTIK GLOBAL: Total: ${statData.totalPegawai}, Pria: ${statData.totalLaki}, 
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'];
       } else {
-        // Tambahkan log detail untuk debugging jika bukan 200
         debugPrint("AI ERROR ${response.statusCode}: ${response.body}");
         return "Marsal sedang mengalami kendala teknis (Error ${response.statusCode}). Silakan coba sesaat lagi.";
       }

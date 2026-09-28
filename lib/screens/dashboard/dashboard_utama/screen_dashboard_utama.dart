@@ -5,7 +5,8 @@ import '../../../services/service_trigger.dart';
 import 'package:portal_gh2026/widgets/premium_header.dart';
 
 class ScreenDashboardUtama extends StatefulWidget {
-  const ScreenDashboardUtama({super.key});
+  final VoidCallback? onNavigateToMahasiswa;
+  const ScreenDashboardUtama({super.key, this.onNavigateToMahasiswa});
 
   @override
   State<ScreenDashboardUtama> createState() => _ScreenDashboardUtamaState();
@@ -207,6 +208,9 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                                     description: 'Integrasi data magang & bimbingan',
                                     icon: Icons.school_rounded,
                                     color: Colors.purple,
+                                    badgeText: 'Aktif',
+                                    badgeColor: Colors.green,
+                                    onTap: widget.onNavigateToMahasiswa,
                                   ),
                                 ),
                                 SizedBox(
@@ -455,76 +459,85 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
     );
   }
 
-  // WIDGET MODULE PLACEHOLDER
+  // WIDGET MODULE PLACEHOLDER / ACTIVE
   Widget _buildPlaceholderModuleCard({
     required String title,
     required String description,
     required IconData icon,
     required Color color,
+    String? badgeText,
+    Color? badgeColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withValues(alpha: 0.1),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.amber.shade200),
-                      ),
-                      child: Text(
-                        'Menyusul',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.amber.shade900,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: onTap != null ? color.withValues(alpha: 0.3) : Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withValues(alpha: 0.1),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (badgeColor ?? Colors.amber).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: (badgeColor ?? Colors.amber).withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          badgeText ?? 'Menyusul',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: badgeColor ?? Colors.amber.shade900,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            if (onTap != null)
+              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: color),
+          ],
+        ),
       ),
     );
   }

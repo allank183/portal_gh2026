@@ -101,7 +101,7 @@ class _MainLayoutState extends State<MainLayout> {
     ];
 
     final List<Widget> screens = [
-      const ScreenDashboardUtama(),
+      ScreenDashboardUtama(onNavigateToMahasiswa: () => setState(() => _selectedIndex = 5)),
       ScreenMarsalChat(userData: _currentUser?.toFirestore() ?? {}),
       const ScreenProfilSdm(),
       _currentUser != null
