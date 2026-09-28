@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../../../repositories/repo_statistik.dart';
+import '../../../repositories/repo_mahasiswa.dart';
+import '../../../models/model_mahasiswa.dart';
 import '../../../services/service_trigger.dart';
 import 'package:portal_gh2026/widgets/premium_header.dart';
 
 class ScreenDashboardUtama extends StatefulWidget {
-  final VoidCallback? onNavigateToMahasiswa;
-  const ScreenDashboardUtama({super.key, this.onNavigateToMahasiswa});
+  const ScreenDashboardUtama({super.key});
 
   @override
   State<ScreenDashboardUtama> createState() => _ScreenDashboardUtamaState();
@@ -14,7 +16,8 @@ class ScreenDashboardUtama extends StatefulWidget {
 
 class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
   final StatistikRepository _statistikRepository = StatistikRepository();
-  late Future<DataStatistikPegawai> _statsFuture;
+  final MahasiswaRepository _mahasiswaRepository = MahasiswaRepository();
+  late Future<List<dynamic>> _dashboardDataFuture;
 
   @override
   void initState() {
@@ -27,7 +30,10 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
   void _loadStats() {
     if (mounted) {
       setState(() {
-        _statsFuture = _statistikRepository.getStatistikData();
+        _dashboardDataFuture = Future.wait([
+          _statistikRepository.getStatistikData(),
+          _mahasiswaRepository.getAllMahasiswaKegiatan(),
+        ]);
       });
     }
   }
@@ -49,20 +55,29 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        child: FutureBuilder<DataStatistikPegawai>(
-          future: _statsFuture,
+        child: FutureBuilder<List<dynamic>>(
+          future: _dashboardDataFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final data = snapshot.data ?? DataStatistikPegawai.empty();
+            final data = snapshot.hasData && snapshot.data!.isNotEmpty 
+                ? snapshot.data![0] as DataStatistikPegawai 
+                : DataStatistikPegawai.empty();
+            
+            final mahasiswaList = snapshot.hasData && snapshot.data!.length > 1 
+                ? snapshot.data![1] as List<MahasiswaKegiatanModel> 
+                : <MahasiswaKegiatanModel>[];
+
+            final int totalMahasiswa = mahasiswaList.length;
+            final double totalPendapatanMhs = mahasiswaList.fold(0.0, (sum, m) => sum + m.biaya);
 
             return Column(
               children: [
                 const PremiumHeader(
                   title: 'Dashboard Utama',
-                  subtitle: 'Data Real-time Cloudflare D1',
+                  subtitle: 'Ringkasam Data',
                   borderRadius: BorderRadius.zero,
                 ),
                 Expanded(
@@ -75,9 +90,9 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                         _buildPengumumanSection(),
                         const SizedBox(height: 24),
 
-                        // METRIK UTAMA
+                        // SEMUA KARTU METRIK UTAMA DISATUKAN DALAM 1 SECTION AGAR TIDAK ADA RUANG KOSONG
                         Text(
-                          'Ringkasan Pegawai & Pelatihan',
+                          'Ringkasan SDM, Pelatihan & Mahasiswa',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -87,9 +102,14 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                         const SizedBox(height: 12),
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            double statCardWidth = constraints.maxWidth > 600
-                                ? 260.0
-                                : constraints.maxWidth;
+                            double statCardWidth;
+                            if (constraints.maxWidth > 1100) {
+                              statCardWidth = (constraints.maxWidth - 48) / 4;
+                            } else if (constraints.maxWidth > 600) {
+                              statCardWidth = (constraints.maxWidth - 16) / 2;
+                            } else {
+                              statCardWidth = constraints.maxWidth;
+                            }
 
                             return Wrap(
                               spacing: 16,
@@ -113,6 +133,26 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                                     subtitle: 'Memenuhi Target JPL',
                                     icon: Icons.verified_rounded,
                                     gradientColors: [Colors.teal.shade700, Colors.teal.shade500],
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: statCardWidth,
+                                  child: _buildStatCard(
+                                    title: 'Total Mahasiswa',
+                                    value: '$totalMahasiswa',
+                                    subtitle: 'Mahasiswa Terdaftar',
+                                    icon: Icons.groups_rounded,
+                                    gradientColors: [Colors.purple.shade700, Colors.purple.shade500],
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: statCardWidth,
+                                  child: _buildStatCard(
+                                    title: 'Pendapatan Mahasiswa',
+                                    value: NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(totalPendapatanMhs),
+                                    subtitle: 'Total Kontribusi',
+                                    icon: Icons.account_balance_wallet_rounded,
+                                    gradientColors: [Colors.cyan.shade700, Colors.cyan.shade500],
                                   ),
                                 ),
                               ],
@@ -144,8 +184,8 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                                     icon: Icons.wc_rounded,
                                     color: Colors.indigo,
                                     sections: [
-                                      _PieData(value: data.totalLaki.toDouble(), color: Colors.blue, label: 'Laki-laki'),
-                                      _PieData(value: data.totalPerempuan.toDouble(), color: Colors.pink, label: 'Perempuan'),
+                                      _PieData(label: 'Laki-laki', value: data.totalLaki.toDouble(), color: Colors.blue),
+                                      _PieData(label: 'Perempuan', value: data.totalPerempuan.toDouble(), color: Colors.pink),
                                     ],
                                   ),
                                 ),
@@ -156,9 +196,9 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                                     icon: Icons.local_hospital_rounded,
                                     color: Colors.teal,
                                     sections: [
-                                      _PieData(value: data.totalMedis.toDouble(), color: Colors.teal, label: 'Medis'),
-                                      _PieData(value: data.totalNakes.toDouble(), color: Colors.cyan, label: 'Nakes'),
-                                      _PieData(value: data.totalAdmin.toDouble(), color: Colors.amber.shade800, label: 'Admin'),
+                                      _PieData(label: 'Medis', value: data.totalMedis.toDouble(), color: Colors.teal),
+                                      _PieData(label: 'Nakes', value: data.totalNakes.toDouble(), color: Colors.cyan),
+                                      _PieData(label: 'Admin', value: data.totalAdmin.toDouble(), color: Colors.amber.shade800),
                                     ],
                                   ),
                                 ),
@@ -169,57 +209,10 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                                     icon: Icons.badge_rounded,
                                     color: Colors.orange.shade800,
                                     sections: [
-                                      _PieData(value: data.totalPns.toDouble(), color: Colors.orange, label: 'PNS'),
-                                      _PieData(value: data.totalP3k.toDouble(), color: Colors.deepOrange, label: 'P3K'),
-                                      _PieData(value: data.totalBlu.toDouble(), color: Colors.brown, label: 'BLU'),
+                                      _PieData(label: 'PNS', value: data.totalPns.toDouble(), color: Colors.orange),
+                                      _PieData(label: 'P3K', value: data.totalP3k.toDouble(), color: Colors.deepOrange),
+                                      _PieData(label: 'BLU', value: data.totalBlu.toDouble(), color: Colors.brown),
                                     ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // MODUL INTEGRASI
-                        Text(
-                          'Modul Integrasi',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            double moduleWidth = constraints.maxWidth > 600
-                                ? (constraints.maxWidth - 16) / 2
-                                : constraints.maxWidth;
-
-                            return Wrap(
-                              spacing: 16,
-                              runSpacing: 12,
-                              children: [
-                                SizedBox(
-                                  width: moduleWidth,
-                                  child: _buildPlaceholderModuleCard(
-                                    title: 'Kegiatan Mahasiswa',
-                                    description: 'Integrasi data magang & bimbingan',
-                                    icon: Icons.school_rounded,
-                                    color: Colors.purple,
-                                    badgeText: 'Aktif',
-                                    badgeColor: Colors.green,
-                                    onTap: widget.onNavigateToMahasiswa,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: moduleWidth,
-                                  child: _buildPlaceholderModuleCard(
-                                    title: 'Sistem Presensi',
-                                    description: 'Rekap kehadiran & kedisiplinan',
-                                    icon: Icons.fingerprint_rounded,
-                                    color: Colors.blueGrey,
                                   ),
                                 ),
                               ],
@@ -324,27 +317,34 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
     required List<Color> gradientColors,
   }) {
     return Container(
-      width: 260,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.first.withValues(alpha: 0.25),
+            color: gradientColors.first.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
-                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 6),
                 Text(
                   value,
                   style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
@@ -458,96 +458,11 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
       ),
     );
   }
-
-  // WIDGET MODULE PLACEHOLDER / ACTIVE
-  Widget _buildPlaceholderModuleCard({
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    String? badgeText,
-    Color? badgeColor,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: onTap != null ? color.withValues(alpha: 0.3) : Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: color.withValues(alpha: 0.1),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: (badgeColor ?? Colors.amber).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: (badgeColor ?? Colors.amber).withValues(alpha: 0.3)),
-                        ),
-                        child: Text(
-                          badgeText ?? 'Menyusul',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: badgeColor ?? Colors.amber.shade900,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-            ),
-            if (onTap != null)
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: color),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-// Data model bantuan untuk Pie Chart
 class _PieData {
+  final String label;
   final double value;
   final Color color;
-  final String label;
-
-  _PieData({required this.value, required this.color, required this.label});
+  _PieData({required this.label, required this.value, required this.color});
 }

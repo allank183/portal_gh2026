@@ -67,7 +67,7 @@ class _ScreenMarsalChatState extends State<ScreenMarsalChat> {
           // 1. HEADER PREMIUM
           const PremiumHeader(
             title: 'Marsal AI Assistant',
-            subtitle: 'ANALISIS DATA & LAYANAN PORTAL',
+            subtitle: 'LAYANAN CERDAS',
             borderRadius: BorderRadius.zero,
           ),
 
@@ -111,7 +111,7 @@ class _ScreenMarsalChatState extends State<ScreenMarsalChat> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tanyakan apa saja seputar data JPL, sertifikat,\natau profil rekan kerja Anda.',
+            'Tanyakan apa saja seputar data JPL, sertifikat,\natau profil Anda.',
             textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(color: Colors.grey, fontSize: 13),
           ),

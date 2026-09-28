@@ -60,7 +60,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
           // Premium Header Biru
           const PremiumHeader(
             title: 'Profil Saya',
-            subtitle: 'AKUN & KINERJA',
+            subtitle: 'INFORMASI',
             borderRadius: BorderRadius.zero,
           ),
 
