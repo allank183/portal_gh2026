@@ -479,6 +479,52 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
         });
       }
 
+      // --- ENDPOINT MAHASISWA KEGIATAN ---
+      if (url.pathname === "/mahasiswa-kegiatan/all" && request.method === "GET") {
+        const { results } = await env.portal_gh2026.prepare("SELECT * FROM mahasiswa_kegiatan ORDER BY created_at DESC").all();
+        return new Response(JSON.stringify(results), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/mahasiswa-kegiatan/add" && request.method === "POST") {
+        const m = await request.json();
+        await env.portal_gh2026.prepare(`
+          INSERT INTO mahasiswa_kegiatan (nama, nim, nama_kampus, jenis_kegiatan, jenjang, tanggal_mulai, durasi, satuan, biaya, status, kontak, catatan)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          m.nama, m.nim, m.nama_kampus, m.jenis_kegiatan, m.jenjang,
+          m.tanggal_mulai, m.durasi, m.satuan, m.biaya, m.status || 'Aktif',
+          m.kontak || '', m.catatan || ''
+        ).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/mahasiswa-kegiatan/update" && request.method === "POST") {
+        const m = await request.json();
+        await env.portal_gh2026.prepare(`
+          UPDATE mahasiswa_kegiatan SET nama=?, nim=?, nama_kampus=?, jenis_kegiatan=?, jenjang=?, tanggal_mulai=?, durasi=?, satuan=?, biaya=?, status=?, kontak=?, catatan=?
+          WHERE id=?
+        `).bind(
+          m.nama, m.nim, m.nama_kampus, m.jenis_kegiatan, m.jenjang,
+          m.tanggal_mulai, m.durasi, m.satuan, m.biaya, m.status,
+          m.kontak || '', m.catatan || '', m.id
+        ).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/mahasiswa-kegiatan/delete" && request.method === "GET") {
+        const id = url.searchParams.get("id");
+        await env.portal_gh2026.prepare("DELETE FROM mahasiswa_kegiatan WHERE id = ?").bind(id).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
       return new Response("API Portal GH 2026 Ready", { headers: corsHeaders });
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), { 

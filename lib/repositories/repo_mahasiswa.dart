@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/model_kampus.dart';
 import '../models/model_tarif_mahasiswa.dart';
+import '../models/model_mahasiswa.dart';
 import '../services/service_trigger.dart';
 
 class MahasiswaRepository {
@@ -73,6 +74,49 @@ class MahasiswaRepository {
       body: jsonEncode(tarif.toMap()),
     );
     if (response.statusCode != 200) throw Exception('Gagal update data tarif');
+    
+    refreshTrigger.notifyMahasiswaUpdate();
+  }
+
+  // --- 3. KEGIATAN MAHASISWA ---
+  Future<List<MahasiswaKegiatanModel>> getAllMahasiswaKegiatan() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/mahasiswa-kegiatan/all'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => MahasiswaKegiatanModel.fromJson(json)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error MahasiswaRepository.getAllMahasiswaKegiatan: $e');
+    }
+    return [];
+  }
+
+  Future<void> addMahasiswaKegiatan(MahasiswaKegiatanModel m) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mahasiswa-kegiatan/add'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(m.toMap()),
+    );
+    if (response.statusCode != 200) throw Exception('Gagal mendaftarkan kegiatan mahasiswa');
+    
+    refreshTrigger.notifyMahasiswaUpdate();
+  }
+
+  Future<void> updateMahasiswaKegiatan(MahasiswaKegiatanModel m) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mahasiswa-kegiatan/update'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(m.toMap()),
+    );
+    if (response.statusCode != 200) throw Exception('Gagal update data kegiatan mahasiswa');
+    
+    refreshTrigger.notifyMahasiswaUpdate();
+  }
+
+  Future<void> deleteMahasiswaKegiatan(int id) async {
+    final response = await http.get(Uri.parse('$_baseUrl/mahasiswa-kegiatan/delete?id=$id'));
+    if (response.statusCode != 200) throw Exception('Gagal hapus data kegiatan mahasiswa');
     
     refreshTrigger.notifyMahasiswaUpdate();
   }
