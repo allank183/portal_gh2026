@@ -11,7 +11,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
   // 1. Muat file .env sebelum app/firebase dijalankan
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "assets/.env");
 
   // 2. Inisialisasi Firebase
   await Firebase.initializeApp(

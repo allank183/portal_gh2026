@@ -96,7 +96,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: kampusList.any((k) => k.namaKampus == selectedKampus) ? selectedKampus : (kampusList.isNotEmpty ? kampusList.first.namaKampus : null),
+                    initialValue: kampusList.any((k) => k.namaKampus == selectedKampus) ? selectedKampus : (kampusList.isNotEmpty ? kampusList.first.namaKampus : null),
                     decoration: const InputDecoration(labelText: 'Asal Kampus / Institusi *', prefixIcon: Icon(Icons.school)),
                     items: kampusList.map((k) => DropdownMenuItem(value: k.namaKampus, child: Text(k.namaKampus))).toList(),
                     onChanged: (v) => setDialogState(() => selectedKampus = v ?? ''),
@@ -106,7 +106,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: selectedJenis,
+                          initialValue: selectedJenis,
                           decoration: const InputDecoration(labelText: 'Jenis Kegiatan *'),
                           items: const [
                             DropdownMenuItem(value: 'Penelitian', child: Text('Penelitian')),
@@ -124,7 +124,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: selectedJenjang,
+                          initialValue: selectedJenjang,
                           decoration: const InputDecoration(labelText: 'Jenjang *'),
                           items: const [
                             DropdownMenuItem(value: 'SMK', child: Text('SMK')),
@@ -156,7 +156,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: selectedSatuan,
+                          initialValue: selectedSatuan,
                           decoration: const InputDecoration(labelText: 'Satuan Waktu *'),
                           items: const [
                             DropdownMenuItem(value: 'Hari', child: Text('Hari')),
@@ -177,7 +177,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: selectedStatus,
+                    initialValue: selectedStatus,
                     decoration: const InputDecoration(labelText: 'Status Kegiatan *'),
                     items: const [
                       DropdownMenuItem(value: 'Aktif', child: Text('Aktif')),
@@ -463,7 +463,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
                                 ),
                                 child: ListView.separated(
                                   shrinkWrap: true,
@@ -564,7 +564,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         border: Border.all(color: Colors.grey.shade100),
       ),
       child: Row(
@@ -572,7 +572,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 28),
@@ -601,7 +601,7 @@ class _ScreenKegiatanMahasiswaState extends State<ScreenKegiatanMahasiswa> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         border: Border.all(color: Colors.grey.shade100),
       ),
       child: Column(
