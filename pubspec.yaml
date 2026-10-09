@@ -48,6 +48,8 @@ flutter:
     - assets/.env
     - assets/haki.png
     - assets/sertifikat_haki.pdf
+    - assets/logo_horisontal_kemenkes.png
+    - assets/logo_kemenkes.png
 
 dependency_overrides:
   http: ^1.2.0
