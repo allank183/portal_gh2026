@@ -17,3 +17,4 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 
+flutter build web --release --no-source-maps && npx wrangler pages deploy build/web --project-name=portal-gh2026-web

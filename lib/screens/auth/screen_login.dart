@@ -167,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   // Logo Horisontal Transparan langsung di atas background biru
                   Image.asset(
-                    'logo_horisontal_kemenkes.png',
+                    'assets/logo_horisontal_kemenkes.png',
                     height: 80,
                     errorBuilder: (context, error, stackTrace) => Row(
                       children: [
