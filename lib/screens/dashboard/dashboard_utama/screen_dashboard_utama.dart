@@ -292,12 +292,12 @@ class _ScreenDashboardUtamaState extends State<ScreenDashboardUtama> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Batas Akhir Update Presensi Setiap Tanggal 01 Setiap Bulan untuk Bulan Sebelumnya',
+                  'Diharapkan seluruh pegawai memperbarui riwayat pelatihan setiap akhir bulan.',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Diharapkan seluruh pegawai memperbarui riwayat pelatihan setiap akhir bulan.',
+                  'Data yang ditampilkan merupakan data simulasi untuk keperluan demonstrasi sistem.',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
                 ),
               ],
