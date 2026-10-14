@@ -75,7 +75,7 @@ class _MainLayoutState extends State<MainLayout> {
     bool isDesktop = MediaQuery.of(context).size.width >= 850;
 
     // Pengecekan Hak Akses Verifikasi & Admin
-    bool canVerifyPelatihan = _currentUser?.isVerifikator ?? false;
+    bool canVerifyPelatihan = (_currentUser?.isSuperAdmin ?? false) || (_currentUser?.isVerifikator ?? false);
     bool canVerifyPresensi = (_currentUser?.isSuperAdmin ?? false) ||
         (_currentUser?.permissions.contains('presensi') ?? false) ||
         (_currentUser?.permissions.contains('admin') ?? false);
