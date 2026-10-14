@@ -269,9 +269,16 @@ if (url.pathname === "/pelatihan/check-kombinasi" && request.method === "POST") 
 if (url.pathname === "/rekam-masuk" && request.method === "POST") {
   const d = await request.json();
   await env.portal_gh2026.prepare(`
-    INSERT INTO presensi (uid, nip, nama_pegawai, tanggal, jam_masuk, status, jadwal_kerja, tipe_shift, catat_masuk, foto_masuk_url)
-    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
-  `).bind(d.uid, d.nip, d.nama_pegawai, d.tanggal, d.status || 'Tepat Waktu', d.jadwal_kerja, d.tipe_shift, d.catat_masuk, d.foto_masuk_url).run();
+    INSERT INTO presensi (uid, nip, nama_pegawai, tanggal, jam_masuk, status, jadwal_kerja, tipe_shift, menit_terlambat, menit_wajib_ganti, target_jam_pulang, catat_masuk, foto_masuk_url)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    d.uid, d.nip, d.nama_pegawai, d.tanggal,
+    d.status || 'Tepat Waktu',
+    d.jadwal_kerja || 'Reguler', d.tipe_shift || null,
+    d.menit_terlambat || 0, d.menit_wajib_ganti || 0,
+    d.target_jam_pulang || null,
+    d.catat_masuk || null, d.foto_masuk_url || null
+  ).run();
   return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 }
 
@@ -282,9 +289,15 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
     UPDATE presensi SET 
       jam_pulang = CURRENT_TIMESTAMP, 
       catat_pulang = ?, 
-      foto_pulang_url = ?
+      foto_pulang_url = ?,
+      status = CASE WHEN status = 'Terlambat' THEN 'Terlambat' ELSE COALESCE(?, status) END
     WHERE id = ?
-  `).bind(d.catat_pulang, d.foto_pulang_url, d.id).run();
+  `).bind(
+    d.catat_pulang || null,
+    d.foto_pulang_url || null,
+    d.status_pulang || 'Tepat Waktu',
+    d.id
+  ).run();
   return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
 }
 

@@ -38,6 +38,13 @@ class PresensiRepository {
     String? catatan,
     String? fotoUrl,
   }) async {
+    final now = DateTime.now();
+    final kalkulasi = kalkulasiStatusMasuk(
+      waktuMasuk: now,
+      jadwalKerja: jadwalKerja,
+      tipeShift: tipeShift,
+    );
+
     final response = await http.post(
       Uri.parse('$_baseUrl/rekam-masuk'),
       headers: {'Content-Type': 'application/json'},
@@ -50,6 +57,10 @@ class PresensiRepository {
         'tipe_shift': tipeShift,
         'catat_masuk': catatan,
         'foto_masuk_url': fotoUrl,
+        'status': kalkulasi['status'],
+        'menit_terlambat': kalkulasi['menitTerlambat'],
+        'menit_wajib_ganti': kalkulasi['menitWajibGanti'],
+        'target_jam_pulang': (kalkulasi['targetJamPulang'] as DateTime).toIso8601String(),
       }),
     );
 
@@ -69,9 +80,16 @@ class PresensiRepository {
   /// 3. REKAM PULANG (KE CLOUDFLARE D1)
   Future<void> rekamPulang({
     required String docId,
+    DateTime? targetJamPulang,
     String? catatan,
     String? fotoUrl,
   }) async {
+    final now = DateTime.now();
+    String statusPulang = 'Tepat Waktu';
+    if (targetJamPulang != null && now.isBefore(targetJamPulang)) {
+      statusPulang = 'Cepat Pulang';
+    }
+
     final response = await http.post(
       Uri.parse('$_baseUrl/rekam-pulang'),
       headers: {'Content-Type': 'application/json'},
@@ -79,6 +97,7 @@ class PresensiRepository {
         'id': docId,
         'catat_pulang': catatan,
         'foto_pulang_url': fotoUrl,
+        'status_pulang': statusPulang,
       }),
     );
 

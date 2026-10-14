@@ -374,7 +374,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
                         child: ElevatedButton.icon(
                           onPressed: _isSubmitting
                               ? null
-                              : () => _confirmAndSubmitPulang(presensi.id.toString()),
+                              : () => _confirmAndSubmitPulang(presensi.id.toString(), presensi.targetJamPulang),
                           icon: _isSubmitting
                               ? const SizedBox(
                             width: 20,
@@ -604,7 +604,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
     }
   }
 
-  Future<void> _confirmAndSubmitPulang(String docId) async {
+  Future<void> _confirmAndSubmitPulang(String docId, DateTime? targetJamPulang) async {
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -628,7 +628,7 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
     );
 
     if (confirm == true) {
-      _handlePresensiPulang(docId);
+      _handlePresensiPulang(docId, targetJamPulang);
     }
   }
 
@@ -669,11 +669,11 @@ class _ScreenPresensiState extends State<ScreenPresensi> {
     }
   }
 
-  Future<void> _handlePresensiPulang(String docId) async {
+  Future<void> _handlePresensiPulang(String docId, DateTime? targetJamPulang) async {
     setState(() => _isSubmitting = true);
     try {
       await _serviceLocation.getCurrentLocationAndValidate();
-      await _presensiRepository.rekamPulang(docId: docId);
+      await _presensiRepository.rekamPulang(docId: docId, targetJamPulang: targetJamPulang);
       if (mounted) {
         refreshTrigger.notifyPresensiUpdate(); // Memicu refresh global
         ScaffoldMessenger.of(context).showSnackBar(
