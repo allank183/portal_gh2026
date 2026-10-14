@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class PresensiModel {
   // --- 1. DEKLARASI VARIABEL DITARUH DI SINI ---
   final String id;
@@ -17,8 +15,8 @@ class PresensiModel {
   final DateTime? targetJamPulang;
   final String? catatMasuk;
   final String? catatPulang;
-  final String? fotoMasukUrl;  // <--- DITARUH DI SINI
-  final String? fotoPulangUrl; // <--- DITARUH DI SINI
+  final String? fotoMasukUrl;  
+  final String? fotoPulangUrl; 
   final String? pengajuanId;
   final DateTime? createdAt;
   final String? catatanPenolakan;
@@ -40,67 +38,48 @@ class PresensiModel {
     this.targetJamPulang,
     this.catatMasuk,
     this.catatPulang,
-    this.fotoMasukUrl,  // <--- MASUKKAN JUGA KE CONSTRUCTOR
-    this.fotoPulangUrl, // <--- MASUKKAN JUGA KE CONSTRUCTOR
+    this.fotoMasukUrl,  
+    this.fotoPulangUrl, 
     this.pengajuanId,
     this.createdAt,
     this.catatanPenolakan,
   });
 
-  // --- 3. FACTORY FROM FIRESTORE ---
-  factory PresensiModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return PresensiModel(
-      id: doc.id,
-      uid: data['uid'] ?? '',
-      nip: data['nip'] ?? '',
-      namaPegawai: data['nama_pegawai'] ?? '',
-      tanggal: data['tanggal'] ?? '',
-      jamMasuk: data['jam_masuk'] != null ? (data['jam_masuk'] as Timestamp).toDate() : null,
-      jamPulang: data['jam_pulang'] != null ? (data['jam_pulang'] as Timestamp).toDate() : null,
-      status: data['status'] ?? 'Tepat Waktu',
-      jadwalKerja: data['jadwal_kerja'] ?? 'Reguler',
-      tipeShift: data['tipe_shift'],
-      menitTerlambat: data['menit_terlambat'] ?? 0,
-      menitWajibGanti: data['menit_wajib_ganti'] ?? 0,
-      targetJamPulang: data['target_jam_pulang'] != null
-          ? (data['target_jam_pulang'] as Timestamp).toDate()
-          : null,
-      catatMasuk: data['catat_masuk'],
-      catatPulang: data['catat_pulang'],
-      fotoMasukUrl: data['foto_masuk_url'],   // <--- DIPROSES DI SINI
-      fotoPulangUrl: data['foto_pulang_url'], // <--- DIPROSES DI SINI
-      pengajuanId: data['pengajuan_id'],
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? (data['created_at'] as Timestamp?)?.toDate(),
-      catatanPenolakan: data['catatan_penolakan'],
-    );
+  // Helper untuk parsing waktu UTC dari database D1 ke waktu lokal (.toLocal())
+  static DateTime? _parseServerTime(dynamic value) {
+    if (value == null) return null;
+    String str = value.toString().trim();
+    if (str.isEmpty) return null;
+    
+    if (!str.endsWith('Z') && !str.contains('+') && !str.contains(RegExp(r'-\d{2}:?\d{2}'))) {
+      str = '${str.replaceAll(' ', 'T')}Z';
+    }
+    return DateTime.tryParse(str)?.toLocal();
   }
 
-  // --- 4. FACTORY FROM JSON ---
+  // --- 3. FACTORY FROM JSON (D1) ---
   factory PresensiModel.fromJson(Map<String, dynamic> json) {
     return PresensiModel(
       id: json['id']?.toString() ?? '',
-      uid: json['uid'] ?? '',
-      nip: json['nip'] ?? '',
-      namaPegawai: json['nama_pegawai'] ?? '',
-      tanggal: json['tanggal'] ?? '',
-      jamMasuk: json['jam_masuk'] != null ? DateTime.tryParse(json['jam_masuk']) : null,
-      jamPulang: json['jam_pulang'] != null ? DateTime.tryParse(json['jam_pulang']) : null,
-      status: json['status'] ?? 'Tepat Waktu',
-      jadwalKerja: json['jadwal_kerja'] ?? 'Reguler',
-      tipeShift: json['tipe_shift'],
+      uid: json['uid']?.toString() ?? '',
+      nip: json['nip']?.toString() ?? '',
+      namaPegawai: json['nama_pegawai']?.toString() ?? '',
+      tanggal: json['tanggal']?.toString() ?? '',
+      jamMasuk: _parseServerTime(json['jam_masuk']),
+      jamPulang: _parseServerTime(json['jam_pulang']),
+      status: json['status']?.toString() ?? 'Tepat Waktu',
+      jadwalKerja: json['jadwal_kerja']?.toString() ?? 'Reguler',
+      tipeShift: json['tipe_shift']?.toString(),
       menitTerlambat: json['menit_terlambat'] ?? 0,
       menitWajibGanti: json['menit_wajib_ganti'] ?? 0,
-      targetJamPulang: json['target_jam_pulang'] != null
-          ? DateTime.tryParse(json['target_jam_pulang'])
-          : null,
-      catatMasuk: json['catat_masuk'],
-      catatPulang: json['catat_pulang'],
-      fotoMasukUrl: json['foto_masuk_url'],   // <--- DIPROSES DI SINI
-      fotoPulangUrl: json['foto_pulang_url'], // <--- DIPROSES DI SINI
+      targetJamPulang: _parseServerTime(json['target_jam_pulang']),
+      catatMasuk: json['catat_masuk']?.toString(),
+      catatPulang: json['catat_pulang']?.toString(),
+      fotoMasukUrl: json['foto_masuk_url']?.toString(),   
+      fotoPulangUrl: json['foto_pulang_url']?.toString(), 
       pengajuanId: json['pengajuan_id']?.toString(),
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
-      catatanPenolakan: json['catatan_penolakan'],
+      createdAt: _parseServerTime(json['created_at']),
+      catatanPenolakan: json['catatan_penolakan']?.toString(),
     );
   }
 }
