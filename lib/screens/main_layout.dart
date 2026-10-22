@@ -15,6 +15,7 @@ import 'link_eksternal.dart';
 import 'about_system_screen.dart';
 import 'dashboard/profil_sdm/screen_profil_sdm.dart';
 import 'ai/screen_marsal_chat.dart';
+import 'mou/screen_mou.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -86,6 +87,7 @@ class _MainLayoutState extends State<MainLayout> {
       _NavItem(icon: Icons.auto_awesome, label: 'Marsal AI'),
       _NavItem(icon: Icons.badge_rounded, label: 'Profil SDM'),
       _NavItem(icon: Icons.person_rounded, label: 'Profil Saya'),
+      _NavItem(icon: Icons.handshake_rounded, label: 'MoU'),
       _NavItem(icon: Icons.school_rounded, label: 'Pelatihan'),
       _NavItem(icon: Icons.groups_rounded, label: 'Mahasiswa'),
       _NavItem(icon: Icons.fingerprint_rounded, label: 'Presensi'),
@@ -107,6 +109,7 @@ class _MainLayoutState extends State<MainLayout> {
       _currentUser != null
           ? ScreenProfilSaya(pegawai: _currentUser!)
           : const Center(child: CircularProgressIndicator()),
+      const ScreenMou(),
       const ScreenPelatihanPegawai(),
       const ScreenKegiatanMahasiswa(),
       const ScreenPresensi(),

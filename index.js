@@ -538,6 +538,52 @@ if (url.pathname === "/rekam-pulang" && request.method === "POST") {
         });
       }
 
+      // --- ENDPOINT MOU & KERJA SAMA ---
+      if (url.pathname === "/mou/all" && request.method === "GET") {
+        const { results } = await env.portal_gh2026.prepare("SELECT * FROM mou_kerjasama ORDER BY created_at DESC").all();
+        return new Response(JSON.stringify(results), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/mou/add" && request.method === "POST") {
+        const m = await request.json();
+        await env.portal_gh2026.prepare(`
+          INSERT INTO mou_kerjasama (nomor_mou, judul, mitra, kategori, tanggal_mulai, tanggal_selesai, file_url, status, catatan)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          m.nomor_mou, m.judul, m.mitra, m.kategori || 'Pendidikan',
+          m.tanggal_mulai, m.tanggal_selesai, m.file_url || null,
+          m.status || 'Aktif', m.catatan || ''
+        ).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/mou/update" && request.method === "POST") {
+        const m = await request.json();
+        await env.portal_gh2026.prepare(`
+          UPDATE mou_kerjasama SET nomor_mou=?, judul=?, mitra=?, kategori=?, tanggal_mulai=?, tanggal_selesai=?, file_url=?, status=?, catatan=?
+          WHERE id=?
+        `).bind(
+          m.nomor_mou, m.judul, m.mitra, m.kategori,
+          m.tanggal_mulai, m.tanggal_selesai, m.file_url || null,
+          m.status, m.catatan || '', m.id
+        ).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.pathname === "/mou/delete" && request.method === "GET") {
+        const id = url.searchParams.get("id");
+        await env.portal_gh2026.prepare("DELETE FROM mou_kerjasama WHERE id = ?").bind(id).run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
       return new Response("API Portal GH 2026 Ready", { headers: corsHeaders });
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), { 
