@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-
 import '../repositories/repo_pegawai.dart';
 import '../repositories/repo_pelatihan.dart';
 import '../repositories/repo_presensi.dart';
 import '../repositories/repo_statistik.dart';
 import '../repositories/repo_mahasiswa.dart';
+import '../repositories/repo_mou.dart';
 import '../models/model_pegawai.dart';
 import '../models/model_pelatihan.dart';
 import '../models/model_presensi.dart';
 import '../models/model_mahasiswa.dart';
+import '../models/model_mou.dart';
 
 class GroqService {
   static String get _workerUrl => dotenv.env['GROQ_WORKER_URL'] ?? '';
@@ -26,6 +27,7 @@ class GroqService {
       final presensiRepo = PresensiRepository();
       final statistikRepo = StatistikRepository();
       final mahasiswaRepo = MahasiswaRepository();
+      final mouRepo = MouRepository();
 
       final String userNip = (userData['nip'] ?? '').toString().trim();
       final String userUid = (userData['uid'] ?? '').toString().trim();
@@ -53,6 +55,9 @@ class GroqService {
 
         // Index 5: Kegiatan Mahasiswa (D1)
         mahasiswaRepo.getAllMahasiswaKegiatan(),
+
+        // Index 6: MoU Kerjasama (D1)
+        mouRepo.getAllMou(),
       ]);
 
       final statData = results[0] as DataStatistikPegawai;
@@ -60,6 +65,7 @@ class GroqService {
       final listPelatihan = results[3] as List<PelatihanModel>;
       final searchResult = results[4] as List<PegawaiModel>;
       final listMahasiswa = results[5] as List<MahasiswaKegiatanModel>;
+      final listMou = results[6] as List<MouModel>;
 
       // 3. Format Data untuk AI
       String infoPencarian = searchResult.isNotEmpty
@@ -80,9 +86,18 @@ class GroqService {
           ? listMahasiswa.take(10).map((m) => "• Nama: ${m.nama} | NIM: ${m.nim} | Kampus: ${m.namaKampus} | Kegiatan: ${m.jenisKegiatan} (${m.jenjang}) | Status: ${m.status} | Biaya: Rp ${m.biaya}").join('\n')
           : "Belum ada data mahasiswa kegiatan terdaftar.";
 
+      // Statistik & Info MoU
+      final int totalMou = listMou.length;
+      final int mouAktif = listMou.where((m) => m.status.toLowerCase() == 'aktif').length;
+      final int totalMitraMou = listMou.map((m) => m.mitra.trim().toLowerCase()).toSet().length;
+
+      String infoMou = listMou.isNotEmpty
+          ? listMou.take(10).map((m) => "• No: ${m.nomorMou} | Judul: ${m.judul} | Mitra: ${m.mitra} (${m.kategori}) | Berlaku: ${m.tanggalMulai} s.d. ${m.tanggalSelesai} | Status: ${m.status}").join('\n')
+          : "Belum ada dokumen MoU terdaftar.";
+
       final String systemPrompt = '''
-Anda adalah Marsal, Asisten Dashboard SDM & Akademik Cerdas. 
-TUGAS ANDA: Memberikan informasi dan analisis data berdasarkan data di bawah ini, termasuk data kepegawaian dan kegiatan mahasiswa.
+Anda adalah Marsal, Asisten Dashboard SDM, Akademik & Kerja Sama Cerdas. 
+TUGAS ANDA: Memberikan informasi dan analisis data berdasarkan data di bawah ini, termasuk data kepegawaian, kegiatan mahasiswa, serta dokumen MoU dan Perjanjian Kerja Sama.
 
 ATURAN FORMAT JAWABAN:
 1. GUNAKAN MARKDOWN MURNI. JANGAN gunakan tag HTML seperti <br>, <b>, <i>.
@@ -106,6 +121,12 @@ REKAPITULASI KEGIATAN MAHASISWA:
 - Total Pendapatan Mahasiswa: Rp $totalPendapatanMhs
 - Daftar Mahasiswa Kegiatan:
 $infoMahasiswa
+
+REKAPITULASI DOKUMEN MOU & KERJA SAMA:
+- Total Dokumen MoU: $totalMou (Aktif: $mouAktif)
+- Total Instansi Mitra Kerja Sama: $totalMitraMou
+- Daftar Dokumen MoU:
+$infoMou
 ''';
 
       // 4. Kirim ke Groq Worker
