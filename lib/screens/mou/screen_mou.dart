@@ -4,12 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/model_mou.dart';
+import '../../models/model_pegawai.dart';
 import '../../repositories/repo_mou.dart';
 import '../../services/service_trigger.dart';
 import '../../widgets/premium_header.dart';
 
 class ScreenMou extends StatefulWidget {
-  const ScreenMou({super.key});
+  final PegawaiModel? currentUser;
+  const ScreenMou({super.key, this.currentUser});
 
   @override
   State<ScreenMou> createState() => _ScreenMouState();
@@ -40,7 +42,21 @@ class _ScreenMouState extends State<ScreenMou> {
     super.dispose();
   }
 
+  bool get _canManageMou {
+    if (widget.currentUser == null) return false;
+    return widget.currentUser!.isSuperAdmin ||
+           widget.currentUser!.permissions.contains('mou') ||
+           widget.currentUser!.permissions.contains('admin');
+  }
+
   void _showFormDialog([MouModel? existing]) async {
+    if (!_canManageMou) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Anda tidak memiliki izin (permission "mou") untuk mengelola dokumen MoU.')),
+      );
+      return;
+    }
+
     final nomorCtrl = TextEditingController(text: existing?.nomorMou ?? '');
     final judulCtrl = TextEditingController(text: existing?.judul ?? '');
     final mitraCtrl = TextEditingController(text: existing?.mitra ?? '');
@@ -229,17 +245,18 @@ class _ScreenMouState extends State<ScreenMou> {
                               'Daftar Perjanjian Kerja Sama (MoU)',
                               style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
                             ),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF2563EB),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            if (_canManageMou)
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: () => _showFormDialog(),
+                                icon: const Icon(Icons.add_rounded),
+                                label: const Text('Tambah MoU Baru'),
                               ),
-                              onPressed: () => _showFormDialog(),
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Tambah MoU Baru'),
-                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -371,30 +388,34 @@ class _ScreenMouState extends State<ScreenMou> {
                                               ),
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
-                                          IconButton(
-                                            icon: const Icon(Icons.edit_rounded, color: Colors.blue),
-                                            onPressed: () => _showFormDialog(m),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                                            onPressed: () async {
-                                              final confirm = await showDialog<bool>(
-                                                context: context,
-                                                builder: (context) => AlertDialog(
-                                                  title: const Text('Hapus MoU'),
-                                                  content: Text('Yakin ingin menghapus dokumen MoU "${m.judul}"?'),
-                                                  actions: [
-                                                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-                                                    ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white), onPressed: () => Navigator.pop(context, true), child: const Text('Hapus')),
-                                                  ],
-                                                ),
-                                              );
-                                              if (confirm == true && m.id != null) {
-                                                await _repo.deleteMou(m.id!);
-                                              }
-                                            },
-                                          ),
+                                          if (_canManageMou) ...[
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.edit_rounded, color: Colors.blue),
+                                              tooltip: 'Edit MoU',
+                                              onPressed: () => _showFormDialog(m),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                                              tooltip: 'Hapus MoU',
+                                              onPressed: () async {
+                                                final confirm = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('Hapus MoU'),
+                                                    content: Text('Yakin ingin menghapus dokumen MoU "${m.judul}"?'),
+                                                    actions: [
+                                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+                                                      ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white), onPressed: () => Navigator.pop(context, true), child: const Text('Hapus')),
+                                                    ],
+                                                  ),
+                                                );
+                                                if (confirm == true && m.id != null) {
+                                                  await _repo.deleteMou(m.id!);
+                                                }
+                                              },
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     );

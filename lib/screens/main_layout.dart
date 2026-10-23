@@ -78,8 +78,7 @@ class _MainLayoutState extends State<MainLayout> {
     // Pengecekan Hak Akses Verifikasi & Admin
     bool canVerifyPelatihan = (_currentUser?.isSuperAdmin ?? false) || (_currentUser?.isVerifikator ?? false);
     bool canVerifyPresensi = (_currentUser?.isSuperAdmin ?? false) ||
-        (_currentUser?.permissions.contains('presensi') ?? false) ||
-        (_currentUser?.permissions.contains('admin') ?? false);
+        (_currentUser?.permissions.contains('presensi') ?? false);
     bool isSuperAdmin = _currentUser?.isSuperAdmin ?? false;
 
     final List<_NavItem> menuItems = [
@@ -109,7 +108,7 @@ class _MainLayoutState extends State<MainLayout> {
       _currentUser != null
           ? ScreenProfilSaya(pegawai: _currentUser!)
           : const Center(child: CircularProgressIndicator()),
-      const ScreenMou(),
+      ScreenMou(currentUser: _currentUser),
       const ScreenPelatihanPegawai(),
       const ScreenKegiatanMahasiswa(),
       const ScreenPresensi(),
