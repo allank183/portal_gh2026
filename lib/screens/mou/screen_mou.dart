@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/model_mou.dart';
@@ -73,134 +74,162 @@ class _ScreenMouState extends State<ScreenMou> {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(existing == null ? 'Tambah Dokumen MoU / Kerja Sama' : 'Edit Dokumen MoU'),
-          content: SizedBox(
-            width: 550,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nomorCtrl,
-                    decoration: const InputDecoration(labelText: 'Nomor MoU / Perjanjian *', prefixIcon: Icon(Icons.confirmation_number_rounded)),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: judulCtrl,
-                    decoration: const InputDecoration(labelText: 'Judul / Tentang Kerjasama *', prefixIcon: Icon(Icons.title)),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: mitraCtrl,
-                    decoration: const InputDecoration(labelText: 'Instansi Mitra (Kampus / RS / Perusahaan) *', prefixIcon: Icon(Icons.business_rounded)),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedKategori,
-                    decoration: const InputDecoration(labelText: 'Kategori Kerja Sama *'),
-                    items: const [
-                      DropdownMenuItem(value: 'Pendidikan', child: Text('Pendidikan & Mahasiswa')),
-                      DropdownMenuItem(value: 'Penelitian', child: Text('Penelitian & Riset')),
-                      DropdownMenuItem(value: 'Pelayanan', child: Text('Pelayanan Kesehatan')),
-                      DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya')),
-                    ],
-                    onChanged: (v) => setDialogState(() => selectedKategori = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: mulaiCtrl,
-                          decoration: const InputDecoration(labelText: 'Tanggal Mulai (YYYY-MM-DD) *', prefixIcon: Icon(Icons.calendar_today_rounded)),
+        builder: (context, setDialogState) {
+          Future<void> selectDate(TextEditingController controller) async {
+            DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.tryParse(controller.text) ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) {
+              setDialogState(() {
+                controller.text = DateFormat('yyyy-MM-dd').format(picked);
+              });
+            }
+          }
+
+          return AlertDialog(
+            title: Text(existing == null ? 'Tambah Dokumen MoU / Kerja Sama' : 'Edit Dokumen MoU'),
+            content: SizedBox(
+              width: 550,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nomorCtrl,
+                      decoration: const InputDecoration(labelText: 'Nomor MoU / Perjanjian *', prefixIcon: Icon(Icons.confirmation_number_rounded)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: judulCtrl,
+                      decoration: const InputDecoration(labelText: 'Judul / Tentang Kerjasama *', prefixIcon: Icon(Icons.title)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: mitraCtrl,
+                      decoration: const InputDecoration(labelText: 'Instansi Mitra (Kampus / RS / Perusahaan) *', prefixIcon: Icon(Icons.business_rounded)),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedKategori,
+                      decoration: const InputDecoration(labelText: 'Kategori Kerja Sama *'),
+                      items: const [
+                        DropdownMenuItem(value: 'Pendidikan', child: Text('Pendidikan & Mahasiswa')),
+                        DropdownMenuItem(value: 'Penelitian', child: Text('Penelitian & Riset')),
+                        DropdownMenuItem(value: 'Pelayanan', child: Text('Pelayanan Kesehatan')),
+                        DropdownMenuItem(value: 'Lainnya', child: Text('Lainnya')),
+                      ],
+                      onChanged: (v) => setDialogState(() => selectedKategori = v!),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: mulaiCtrl,
+                            readOnly: true,
+                            onTap: () => selectDate(mulaiCtrl),
+                            decoration: const InputDecoration(
+                              labelText: 'Tanggal Mulai *',
+                              prefixIcon: Icon(Icons.calendar_today_rounded),
+                              hintText: 'Pilih Tanggal',
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: selesaiCtrl,
-                          decoration: const InputDecoration(labelText: 'Tanggal Berakhir (YYYY-MM-DD) *', prefixIcon: Icon(Icons.event_busy_rounded)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: selesaiCtrl,
+                            readOnly: true,
+                            onTap: () => selectDate(selesaiCtrl),
+                            decoration: const InputDecoration(
+                              labelText: 'Tanggal Berakhir *',
+                              prefixIcon: Icon(Icons.event_busy_rounded),
+                              hintText: 'Pilih Tanggal',
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedStatus,
-                    decoration: const InputDecoration(labelText: 'Status MoU *'),
-                    items: const [
-                      DropdownMenuItem(value: 'Aktif', child: Text('Aktif')),
-                      DropdownMenuItem(value: 'Kadaluarsa', child: Text('Kadaluarsa')),
-                    ],
-                    onChanged: (v) => setDialogState(() => selectedStatus = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: catatanCtrl,
-                    decoration: const InputDecoration(labelText: 'Catatan / Keterangan', prefixIcon: Icon(Icons.note_rounded)),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      FilePickerResult? result = await FilePicker.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                        withData: true,
-                      );
-                      if (result != null && result.files.single.bytes != null) {
-                        setDialogState(() {
-                          fileBytes = result.files.single.bytes;
-                          fileName = result.files.single.name;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.picture_as_pdf_rounded),
-                    label: Text(fileName ?? (existing?.fileUrl != null ? 'Ganti File Dokumen PDF' : 'Upload Berkas MoU (PDF)')),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedStatus,
+                      decoration: const InputDecoration(labelText: 'Status MoU *'),
+                      items: const [
+                        DropdownMenuItem(value: 'Aktif', child: Text('Aktif')),
+                        DropdownMenuItem(value: 'Kadaluarsa', child: Text('Kadaluarsa')),
+                      ],
+                      onChanged: (v) => setDialogState(() => selectedStatus = v!),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: catatanCtrl,
+                      decoration: const InputDecoration(labelText: 'Catatan / Keterangan', prefixIcon: Icon(Icons.note_rounded)),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        FilePickerResult? result = await FilePicker.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                          withData: true,
+                        );
+                        if (result != null && result.files.single.bytes != null) {
+                          setDialogState(() {
+                            fileBytes = result.files.single.bytes;
+                            fileName = result.files.single.name;
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.picture_as_pdf_rounded),
+                      label: Text(fileName ?? (existing?.fileUrl != null ? 'Ganti File Dokumen PDF' : 'Upload Berkas MoU (PDF)')),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
-              onPressed: () async {
-                if (nomorCtrl.text.trim().isEmpty || judulCtrl.text.trim().isEmpty || mitraCtrl.text.trim().isEmpty || mulaiCtrl.text.trim().isEmpty || selesaiCtrl.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap isi semua field yang wajib (*)')));
-                  return;
-                }
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), foregroundColor: Colors.white),
+                onPressed: () async {
+                  if (nomorCtrl.text.trim().isEmpty || judulCtrl.text.trim().isEmpty || mitraCtrl.text.trim().isEmpty || mulaiCtrl.text.trim().isEmpty || selesaiCtrl.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap isi semua field yang wajib (*)')));
+                    return;
+                  }
 
-                final mouModel = MouModel(
-                  id: existing?.id,
-                  nomorMou: nomorCtrl.text.trim(),
-                  judul: judulCtrl.text.trim(),
-                  mitra: mitraCtrl.text.trim(),
-                  kategori: selectedKategori,
-                  tanggalMulai: mulaiCtrl.text.trim(),
-                  tanggalSelesai: selesaiCtrl.text.trim(),
-                  fileUrl: existing?.fileUrl,
-                  status: selectedStatus,
-                  catatan: catatanCtrl.text.trim(),
-                );
+                  final mouModel = MouModel(
+                    id: existing?.id,
+                    nomorMou: nomorCtrl.text.trim(),
+                    judul: judulCtrl.text.trim(),
+                    mitra: mitraCtrl.text.trim(),
+                    kategori: selectedKategori,
+                    tanggalMulai: mulaiCtrl.text.trim(),
+                    tanggalSelesai: selesaiCtrl.text.trim(),
+                    fileUrl: existing?.fileUrl,
+                    status: selectedStatus,
+                    catatan: catatanCtrl.text.trim(),
+                  );
 
-                if (existing == null) {
-                  await _repo.addMou(mouModel, fileBytes: fileBytes, fileName: fileName);
-                } else {
-                  await _repo.updateMou(mouModel, fileBytes: fileBytes, fileName: fileName);
-                }
+                  if (existing == null) {
+                    await _repo.addMou(mouModel, fileBytes: fileBytes, fileName: fileName);
+                  } else {
+                    await _repo.updateMou(mouModel, fileBytes: fileBytes, fileName: fileName);
+                  }
 
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dokumen MoU berhasil disimpan!'), backgroundColor: Colors.green));
-                }
-              },
-              child: const Text('Simpan Dokumen'),
-            ),
-          ],
-        ),
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dokumen MoU berhasil disimpan!'), backgroundColor: Colors.green));
+                  }
+                },
+                child: const Text('Simpan Dokumen'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -455,17 +484,21 @@ class _ScreenMouState extends State<ScreenMou> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: GoogleFonts.plusJakartaSans(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 4),
-                Text(value, style: GoogleFonts.plusJakartaSans(color: const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.bold)),
-              ],
-            ),
+            child: labelAndValueColumn(title, value),
           ),
         ],
       ),
+    );
+  }
+
+  Widget labelAndValueColumn(String title, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: GoogleFonts.plusJakartaSans(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.plusJakartaSans(color: const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }

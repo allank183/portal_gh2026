@@ -210,7 +210,7 @@ class _ScreenProfilSayaState extends State<ScreenProfilSaya> with SingleTickerPr
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'NIP. ${_currentPegawai.nip}  •  Role: ${_currentPegawai.role.toUpperCase()}',
+                          'NIP. ${_currentPegawai.nip}',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             color: const Color(0xFF475569),
